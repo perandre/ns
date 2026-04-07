@@ -40,6 +40,22 @@ Three orchestration files in `bundles/` that run several tasks per scheduled ses
 
 Use bundles when your plan limits daily scheduled triggers — three bundles cover all 12 tasks in three slots.
 
+## Multi-repo wrappers
+
+When running across many client projects, use the multi-repo wrappers in `bundles/multi-*.md` instead. They run the same bundle against **every cloned repo** in the session:
+
+| Wrapper | Inner bundle |
+|---|---|
+| `multi-1-plans-docs.md` | bundle 1 |
+| `multi-2-code-verified.md` | bundle 2 |
+| `multi-3-audits-prs.md` | bundle 3 |
+
+Each wrapper auto-discovers cloned repos, skips ones without `## Night Shift Config` in their `CLAUDE.md`, and continues on per-repo failures. It prints a summary table at the end for the morning review. See `bundles/_multi-runner.md` for the shared loop protocol.
+
+**To add a project:** add its repo URL to the `sources[]` array of all 3 triggers in your scheduled-trigger config. No prompt edits needed — the wrapper picks it up automatically next run. Make sure the project's `CLAUDE.md` has the **Night Shift Config** section, otherwise it'll be `no-config-skip`'d.
+
+**Trade-offs:** all repos are processed sequentially in one session. Long sessions can hit timeouts and accumulate context bloat. For 2–4 small projects this is the cheapest way to cover everything; for 5+ or large repos, consider per-project triggers (more slots) or splitting bundles.
+
 ## How triggers use it
 
 In each project's scheduled trigger, use a thin wrapper prompt.
