@@ -5,17 +5,36 @@ You are running the Night Shift **Plans & Docs** bundle across **all repositorie
 ## Discover repos
 List sibling directories from your starting working directory. For each candidate, run `git rev-parse --show-toplevel` to confirm it's a git repository. Build the list of valid repos before starting the loop.
 
-## Per-repo loop
-For each repo, in directory-name order:
+## Per-repo loop — isolated subagent per repo
 
-1. `cd` into the repo. Capture the current branch.
-2. `git status --porcelain` — if the tree is dirty, log `dirty-skip` and continue with the next repo. **Do not** clean up someone else's in-progress work.
-3. Check opt-out signals: skip with `opted-out` if `.nightshift-skip` exists at the repo root, or any of `CLAUDE.md` / `AGENTS.md` / `README.md` contains the line `Night Shift: skip`. Otherwise proceed — `CLAUDE.md` is optional, defaults apply when missing (see `_multi-runner.md`).
-4. Fetch and execute the per-repo bundle:
-   **https://raw.githubusercontent.com/perandre/night-shift/v3/bundles/1-plans-docs.md**
-   The bundle's own rules apply (skip excluded tasks, continue on silent exits, push per CLAUDE.md push protocol).
-5. If the inner bundle throws an unrecoverable error, catch it. Record `failed` for this repo and a one-line reason. **Do not abort the multi-repo run.**
-6. `cd` back to the parent directory before starting the next repo.
+**Context isolation requirement:** the main wrapper must NOT process bundle work itself. For each repo, dispatch a subagent via the `Task` tool. The main wrapper only stores the subagent's one-line result, never its intermediate output.
+
+For each discovered repo, in directory-name order:
+
+1. From the main wrapper, briefly `cd` into the repo to:
+   - Run `git status --porcelain` — if dirty, record `dirty-skip` and continue to the next repo.
+   - Check opt-out signals. Record `opted-out` and continue if any of: `.nightshift-skip` exists at the repo root, or `CLAUDE.md` / `AGENTS.md` / `README.md` contains the line `Night Shift: skip`.
+   - Capture the absolute repo path. `cd` back to the parent.
+2. Dispatch a `Task` subagent with this prompt (substitute `{REPO_PATH}` with the absolute path):
+
+   ```
+   Your working directory is {REPO_PATH}. cd into it now.
+
+   Fetch https://raw.githubusercontent.com/perandre/night-shift/v4/bundles/1-plans-docs.md
+   and execute it against this repository.
+
+   CLAUDE.md is optional. If it has a `## Night Shift Config` section, follow those overrides.
+   Otherwise apply the defaults from
+   https://raw.githubusercontent.com/perandre/night-shift/v4/bundles/_multi-runner.md
+   (autodetect test/build commands, plain `git push origin <branch>`, etc).
+
+   When you are done, return EXACTLY ONE LINE in this format:
+   <ok|failed> | <terse note, max 80 chars>
+   ```
+3. Capture only that one-line result. Do **not** echo or summarize the subagent's work into your own context.
+4. Move on to the next repo. The previous subagent's context is discarded.
+
+If a subagent dispatch itself fails (not the inner work — the dispatch), record `failed | dispatch error: <reason>` and continue.
 
 ## Final report
 After processing all repos, print a single summary table and stop. No prose after the table.

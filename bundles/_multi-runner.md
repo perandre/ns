@@ -24,19 +24,27 @@ ls -1 -d */ 2>/dev/null
 
 A directory is a repo if `git rev-parse --show-toplevel` succeeds inside it.
 
-## The loop
+## The loop — one isolated subagent per repo
+
+**Critical:** Each repo must be processed in its own subagent (via the `Task` tool) so the main wrapper's context window does not accumulate state across repos. The main wrapper only stores a single one-line result per repo.
 
 For each discovered repo, in directory-name order:
 
-1. `cd` into the repo.
-2. `git status --porcelain` — confirm the tree is clean. If dirty, log `dirty-skip` and continue.
-3. Check for opt-out signals. Skip the repo and log `opted-out` if **any** of these are true:
-   - A file `.nightshift-skip` exists at the repo root.
-   - `CLAUDE.md`, `AGENTS.md`, or `README.md` contains a line `Night Shift: skip`.
-   Otherwise, proceed even if `CLAUDE.md` does not exist or has no Night Shift Config section — fall back to the **defaults** below.
-4. Run the inner bundle (the `multi-N-*.md` file specifies which one). Treat its own "exit silently" rules as success.
-5. Catch any uncaught failure from the inner bundle. Record it. **Do not abort the multi-repo run.**
-6. `cd` back to the parent directory before starting the next repo.
+1. From the main wrapper, `cd` into the repo just long enough to:
+   - Run `git status --porcelain` — if dirty, record `dirty-skip` and skip to the next repo.
+   - Check for opt-out signals. Record `opted-out` and skip if **any** of these are true:
+     - A file `.nightshift-skip` exists at the repo root.
+     - `CLAUDE.md`, `AGENTS.md`, or `README.md` contains a line `Night Shift: skip`.
+   - `cd` back to the parent directory.
+2. Otherwise, dispatch a **subagent** via the `Task` tool with a self-contained prompt that:
+   - Tells the subagent its working directory (the repo's absolute path).
+   - Gives it the URL of the inner bundle to fetch and execute.
+   - Instructs it to perform all of the inner bundle's work (read CLAUDE.md if present, run tasks, commit, push).
+   - Asks it to return **one single line** summarizing what it did, in the format: `<status> | <terse note>` where status ∈ {`ok`, `failed`}.
+3. Capture only that one-line result. **Do not** read or echo any of the subagent's intermediate work into the main wrapper's context.
+4. Move on to the next repo. The previous repo's details are now isolated to the finished subagent and do not pollute the next iteration.
+
+If a subagent throws an unrecoverable error, record `failed | <one-line reason>` and continue. Never abort the multi-repo run.
 
 ## Defaults when no config exists
 
