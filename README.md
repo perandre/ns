@@ -4,17 +4,21 @@
 
 While you sleep, an AI agent runs maintenance jobs across your repositories. You wake up to commits and PRs, and a one-line summary in each project's history file.
 
-## Try it now
+## Get started
 
-Open Claude Code in any local project and paste this:
+Open Claude Code in any project and paste this:
 
 ```
-Fetch https://raw.githubusercontent.com/perandre/night-shift/v8/bundles/all.md and execute it against this repository.
+Fetch https://raw.githubusercontent.com/perandre/night-shift/v9/SETUP.md and follow it to set up Night Shift on my account. Ask me which repos to include.
 ```
 
-Claude reads the file and runs all four bundles against your repo: plans, docs, code-fixes, audits. No setup needed. Try it on a side branch first if you want to inspect before keeping anything.
+Claude will ask you which repositories to manage, confirm the schedule, and create three nightly scheduled jobs in your account. Two minutes, no manual config.
 
-Once you like what you see, schedule it nightly — see [HOW-TO.md](HOW-TO.md).
+Want to try it once before scheduling? Paste this in any project instead — runs all four bundles against the current repo, no scheduling:
+
+```
+Fetch https://raw.githubusercontent.com/perandre/night-shift/v9/bundles/all.md and execute it against this repository.
+```
 
 ## What you'll find in your repo tomorrow morning
 
