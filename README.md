@@ -4,6 +4,16 @@
 
 While you sleep, an AI agent runs maintenance jobs across your repositories. You wake up to commits and PRs, and a one-line summary in each project's history file.
 
+## Try it now (no setup, no schedule)
+
+Open Claude Code in any local project and paste this:
+
+> Fetch https://raw.githubusercontent.com/perandre/night-shift/v8/bundles/docs.md and execute it against this repository. CLAUDE.md is optional — defaults apply if missing.
+
+Claude will read the bundle, run the four doc tasks (changelog, user guide, decision records, improvement suggestions), and commit the results. Try it on a non-critical branch first if you want to inspect the output before keeping it.
+
+To try a different bundle, swap `docs.md` for `plans.md`, `code-fixes.md`, or `audits.md`. Once you're happy with what it does, schedule it nightly — see [HOW-TO.md](HOW-TO.md).
+
 ## What you'll find in your repo tomorrow morning
 
 - **Planned features partly built** — picks the next phase from a `docs/*-PLAN.md` file and opens a PR
