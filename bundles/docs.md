@@ -5,15 +5,22 @@ You are running the Night Shift **Docs** bundle on this repository.
 ## Setup
 Read `CLAUDE.md` for the **Night Shift Config** section if present. If absent, use defaults — see `_multi-runner.md`.
 
-## Tasks
-Run these tasks. They are independent and may run in any order. See `manifest.yml` for full task metadata.
+## Resolve tasks from manifest
 
-1. https://raw.githubusercontent.com/perandre/night-shift/main/tasks/update-changelog.md
-2. https://raw.githubusercontent.com/perandre/night-shift/main/tasks/update-user-guide.md
-3. https://raw.githubusercontent.com/perandre/night-shift/main/tasks/document-decisions.md
-4. https://raw.githubusercontent.com/perandre/night-shift/main/tasks/suggest-improvements.md
+Fetch and parse https://raw.githubusercontent.com/perandre/night-shift/main/manifest.yml.
 
-## Rules
-- Mode: **direct-to-main** — each task commits straight to the default branch.
-- Tasks are independent — one task's exit does not affect the others.
-- If a task says "exit silently", that is success — continue with the rest.
+- Read `bundles.docs` for this bundle's settings.
+- Read `tasks[]` and select all entries where `bundle: docs`. Sort by `order` ascending. This is the canonical task list — **do not** rely on a hardcoded list anywhere else.
+
+## Execute
+
+For each task in order:
+
+1. Fetch `https://raw.githubusercontent.com/perandre/night-shift/main/tasks/<task-id>.md`.
+2. Execute the task exactly as written, including its commit and push steps.
+3. Apply the bundle's rules from the manifest. Docs is `parallelism: independent`, `stop_on_failure: false` — one task's exit must not affect the others.
+4. If a task says "exit silently", that is success — continue with the next.
+
+## Mode
+
+Per the manifest, this bundle is **direct-to-main** mode. Tasks commit straight to the default branch.

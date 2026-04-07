@@ -27,8 +27,7 @@ You want Night Shift to do something it doesn't currently do — say, "check for
      mode: pull-request       # or direct-to-main
      order: 5                 # last in its bundle
    ```
-3. Add the task URL to the matching `bundles/<bundle>.md` file (one line).
-4. Commit and push to `main`. Triggers fetch from `main` at runtime, so the change is live on the next scheduled run — no version bump needed.
+3. Commit and push to `main`. Triggers fetch from `main` at runtime, so the change is live on the next scheduled run. The bundle prompt resolves its task list from `manifest.yml` dynamically — **no bundle file edit needed**.
 
 ## 3. Rename a task
 
@@ -36,10 +35,9 @@ You want `find-bugs` to be called `hunt-for-bugs` instead.
 
 1. `git mv tasks/find-bugs.md tasks/hunt-for-bugs.md`
 2. Update the `id:` and `title:` in `manifest.yml`.
-3. Update the URL line in `bundles/audits.md`.
-4. Commit and push to `main`. The change is live on the next scheduled run.
+3. Commit and push to `main`. The change is live on the next scheduled run. The bundle file does **not** need updating — it resolves task IDs from the manifest dynamically.
 
-(Renaming bundles works the same way: rename the file in `bundles/`, update `manifest.yml`, update the multi-* wrapper that calls it.)
+(Renaming bundles is similar: rename the file in `bundles/`, update its key under `bundles:` in the manifest, and update the multi-* wrapper that calls it.)
 
 ## 4. Stop Night Shift on a project
 

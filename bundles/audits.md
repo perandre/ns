@@ -5,15 +5,23 @@ You are running the Night Shift **Audits** bundle on this repository.
 ## Setup
 Read `CLAUDE.md` for the **Night Shift Config** section if present. If absent, use defaults — see `_multi-runner.md`.
 
-## Tasks
-Each task creates its own branch and its own PR. Run them sequentially but isolated: return to the default branch and ensure the working tree is clean before starting each one. See `manifest.yml` for full task metadata.
+## Resolve tasks from manifest
 
-1. https://raw.githubusercontent.com/perandre/night-shift/main/tasks/find-security-issues.md
-2. https://raw.githubusercontent.com/perandre/night-shift/main/tasks/find-bugs.md
-3. https://raw.githubusercontent.com/perandre/night-shift/main/tasks/improve-seo.md
-4. https://raw.githubusercontent.com/perandre/night-shift/main/tasks/improve-performance.md
+Fetch and parse https://raw.githubusercontent.com/perandre/night-shift/main/manifest.yml.
 
-## Rules
-- Mode: **pull-request** — each task creates a feature branch and opens a PR.
-- Tasks are independent — one task failing must not stop the bundle.
-- If a task says "exit silently" (no real issues found, or a similar PR already open), continue with the next.
+- Read `bundles.audits` for this bundle's settings.
+- Read `tasks[]` and select all entries where `bundle: audits`. Sort by `order` ascending. This is the canonical task list — **do not** rely on a hardcoded list anywhere else.
+
+## Execute
+
+For each task in order:
+
+1. Before starting each task: `git checkout <default-branch> && git pull` and confirm the working tree is clean. Each audit task creates its own branch + PR and must start from a clean base.
+2. Fetch `https://raw.githubusercontent.com/perandre/night-shift/main/tasks/<task-id>.md`.
+3. Execute the task exactly as written.
+4. Apply the bundle's rules from the manifest. Audits is `parallelism: independent`, `stop_on_failure: false` — one task failing or exiting must **not** stop the bundle.
+5. If a task says "exit silently" (no real issues found, or a similar PR already open), continue with the next.
+
+## Mode
+
+Per the manifest, this bundle is **pull-request** mode. Each task creates its own feature branch and opens its own PR.

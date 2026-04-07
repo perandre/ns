@@ -14,8 +14,4 @@ Improvement ideas for the Night Shift project itself. Maintained by the `suggest
 - **Effort:** S
 - **Files:** `bundles/all.md` — add a note that the central run log is multi-* only, OR add an instruction to clone/push to the central log if the user has access. The note is the safer default.
 
-## Manifest parsing is implicit
-
-- **Why:** `manifest.yml` is the declared source of truth for tasks and bundles, but the bundle prompts (`bundles/<name>.md`) hardcode their task list as URLs. Editing the manifest without also editing the bundle file means the manifest and reality drift apart silently.
-- **Effort:** M
-- **Files:** Either (a) make bundle prompts fetch and parse the manifest at runtime (more dynamic, slightly more agent work), or (b) add a note to `HOW-TO.md` reminding maintainers to edit both the manifest and the bundle file. Option (b) is the cheaper start.
+~~Manifest parsing is implicit~~ **Fixed.** Bundle prompts now fetch and parse `manifest.yml` at runtime to resolve their task list. Editing the manifest is enough — the bundle file does not need updating.

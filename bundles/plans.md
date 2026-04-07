@@ -5,13 +5,23 @@ You are running the Night Shift **Plans** bundle on this repository.
 ## Setup
 Read `CLAUDE.md` for the **Night Shift Config** section if present. If absent, use defaults — see `_multi-runner.md`.
 
-## Tasks
-Run these tasks in order. See `manifest.yml` for full task metadata.
+## Resolve tasks from manifest
 
-1. https://raw.githubusercontent.com/perandre/night-shift/main/tasks/build-planned-features.md
+Fetch and parse https://raw.githubusercontent.com/perandre/night-shift/main/manifest.yml.
 
-## Rules
-- Mode: **pull-request** — task creates a feature branch and opens a PR.
-- One PR per plan, at most one phase implemented per night.
-- If there are no pending plan phases, the task exits silently. That is success.
-- Never commit directly to the default branch in this bundle.
+- Read `bundles.plans` for this bundle's settings (`parallelism`, `stop_on_failure`, `mode`).
+- Read `tasks[]` and select all entries where `bundle: plans`. Sort by `order` ascending. This is the canonical task list — **do not** rely on a hardcoded list anywhere else.
+
+## Execute
+
+For each task in order:
+
+1. Fetch `https://raw.githubusercontent.com/perandre/night-shift/main/tasks/<task-id>.md` (where `<task-id>` is the task's `id` field from the manifest).
+2. Execute the task exactly as written, including its commit and PR steps.
+3. Apply the bundle's rules from the manifest:
+   - `parallelism: independent` and `stop_on_failure: false` — one task's exit must not affect the others.
+4. If a task says "exit silently", that is success — continue with the next.
+
+## Mode
+
+Per the manifest, this bundle is **pull-request** mode. Tasks create feature branches and open PRs, never commit directly to the default branch.
