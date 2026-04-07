@@ -4,15 +4,17 @@
 
 While you sleep, an AI agent runs maintenance jobs across your repositories. You wake up to commits and PRs, and a one-line summary in each project's history file.
 
-## Try it now (no setup, no schedule)
+## Try it now
 
 Open Claude Code in any local project and paste this:
 
-> Fetch https://raw.githubusercontent.com/perandre/night-shift/v8/bundles/docs.md and execute it against this repository. CLAUDE.md is optional — defaults apply if missing.
+```
+Fetch https://raw.githubusercontent.com/perandre/night-shift/v8/bundles/all.md and execute it against this repository.
+```
 
-Claude will read the bundle, run the four doc tasks (changelog, user guide, decision records, improvement suggestions), and commit the results. Try it on a non-critical branch first if you want to inspect the output before keeping it.
+Claude reads the file and runs all four bundles against your repo: plans, docs, code-fixes, audits. No setup needed. Try it on a side branch first if you want to inspect before keeping anything.
 
-To try a different bundle, swap `docs.md` for `plans.md`, `code-fixes.md`, or `audits.md`. Once you're happy with what it does, schedule it nightly — see [HOW-TO.md](HOW-TO.md).
+Once you like what you see, schedule it nightly — see [HOW-TO.md](HOW-TO.md).
 
 ## What you'll find in your repo tomorrow morning
 
@@ -20,51 +22,33 @@ To try a different bundle, swap `docs.md` for `plans.md`, `code-fixes.md`, or `a
 - **Updated docs** — changelog entries, user guide pages, decision records
 - **New test coverage** — fills coverage gaps following your existing test patterns
 - **Fixed accessibility issues** — WCAG AA violations on key pages
-- **Translated UI strings** — moves hardcoded English (or whatever) into your i18n system
-- **Audit PRs** — security, bug, SEO, and performance issues, each as its own PR you can review or close
+- **Translated UI strings** — moves hardcoded text into your i18n system
+- **Audit PRs** — security, bug, SEO, and performance issues, each as its own PR
 
-Each affected repository gets a one-line entry appended to `docs/NIGHTSHIFT-HISTORY.md` so anyone with repo access can see what's been happening.
-
-## What it looks like
-
-After a run, the trigger dashboard shows a summary table like this:
-
-```
-Night Shift docs — multi-repo summary
-
-| Repo         | Status   | Notes                                    |
-|--------------|----------|------------------------------------------|
-| frisk-survey | ok       | 2 ADRs added; suggestions updated        |
-| snippy       | silent   | no user-facing changes since last run    |
-| phone-home   | ok       | changelog entry for v0.4 release         |
-```
+Each affected repo gets a one-line entry in `docs/NIGHTSHIFT-HISTORY.md`.
 
 ## The bundles
 
-There are four bundles. Each bundle is a group of related tasks that run together. Bundles can be scheduled independently — typically plans nightly, the others on a slower cadence.
-
 | Bundle | What it does | Mode |
 |---|---|---|
-| **plans** | Implements the next phase of a planning document | Opens one PR per plan |
-| **docs** | Updates changelog, user guide, ADRs, suggestions | Direct to main |
+| **plans** | Implements the next phase of a planning document | One PR per plan |
+| **docs** | Updates changelog, user guide, decision records, suggestions | Direct to main |
 | **code-fixes** | Adds tests, fixes accessibility, completes translations | Direct to main |
-| **audits** | Finds security / bug / SEO / performance issues | Opens one PR per issue area |
+| **audits** | Finds security / bug / SEO / performance issues | One PR per area |
 
-> **Note:** if your trigger plan only allows 3 enabled triggers, you can run `docs` and `code-fixes` together in one trigger via `bundles/multi-docs-and-code-fixes.md`. The bundles themselves stay separate in `manifest.yml` — only the trigger composition combines them.
-
-See `manifest.yml` for the full list of tasks in each bundle, what each task does, and the order they run in. **`manifest.yml` is the single source of truth** — to add a task, rename one, change ordering, or move a task to a different bundle, edit only that file.
+`manifest.yml` is the single source of truth for what tasks exist, what they do, what bundle they belong to, and what order they run in. Edit one file to add, rename, reorder, or move tasks.
 
 ## Stopping Night Shift on a project
 
-Add **either** of these to opt a project out:
+Add **either**:
 - An empty file `.nightshift-skip` at the repo root
 - A line `Night Shift: skip` in `CLAUDE.md`, `AGENTS.md`, or `README.md`
 
-The wrapper will report `opted-out` for that repo and move on without touching anything.
+The wrapper reports `opted-out` for that repo and moves on.
 
 ## Customising per project
 
-A project can override the defaults by adding a `## Night Shift Config` section to its `CLAUDE.md`. All fields are optional — anything unset uses sensible defaults. Example:
+Add a `## Night Shift Config` section to the project's `CLAUDE.md`. All fields are optional — anything unset uses sensible defaults autodetected from your `package.json` and repo layout.
 
 ```markdown
 ## Night Shift Config
@@ -74,46 +58,8 @@ A project can override the defaults by adding a `## Night Shift Config` section 
 - Build command: npm run build
 - Push: git push mirror main && git push origin main
 - Key pages: /dashboard, /surveys, /people
-- Changelog format: "## Uke NN / ### Title / - Bullet"
 ```
-
-If you don't add this section, Night Shift autodetects test/build commands from your `package.json` and runs every applicable task.
 
 ## How to add a project, add a task, or run something now
 
 See **[HOW-TO.md](HOW-TO.md)** — five copy-paste recipes covering the common operations.
-
-## How it works under the hood
-
-(For night shift maintainers — feel free to skip.)
-
-The `tasks/` directory contains one prompt file per task. The `bundles/` directory contains one prompt per bundle (which references its tasks) and one `multi-*.md` wrapper per bundle (which loops over multiple repos via subagents). A scheduled trigger fetches a `multi-*.md` URL and executes it. Each target repo is processed in its own `Task` subagent so context stays clean across repos.
-
-`manifest.yml` is the source of truth for what tasks exist and how they're grouped. Bundle prompts reference task IDs from the manifest.
-
-Versioning uses git tags (`v1`, `v2`, ...) on this repo. Triggers reference a tagged version in the raw URL so prompt edits don't go live until you cut a new tag.
-
-## Layout
-
-```
-night-shift/
-├── manifest.yml             ← single source of truth
-├── README.md                ← you are here
-├── HOW-TO.md                ← copy-paste recipes
-├── tasks/                   ← one prompt file per task
-│   ├── build-planned-features.md
-│   ├── update-changelog.md
-│   └── ...
-├── bundles/                 ← one prompt per bundle + multi-repo wrappers
-│   ├── plans.md
-│   ├── docs.md
-│   ├── code-fixes.md
-│   ├── audits.md
-│   ├── multi-plans.md
-│   ├── multi-docs.md
-│   ├── multi-code-fixes.md
-│   ├── multi-audits.md
-│   └── _multi-runner.md
-└── runs/                    ← historical run logs across all projects
-    └── YYYY-MM.md
-```
