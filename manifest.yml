@@ -71,8 +71,8 @@ tasks:
     scope: app
 
   - id: update-user-guide
-    title: Update user guide
-    description: Generates and refreshes end-user documentation from UI routes.
+    title: Update documentation
+    description: Discovers and refreshes all project docs — user guides, READMEs, technical docs, concept docs, model descriptions, and more.
     bundle: docs
     mode: direct-to-main
     order: 2
