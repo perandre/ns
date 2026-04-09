@@ -6,12 +6,12 @@ description: |
   Use this skill when the user explicitly asks to: install Night Shift, set up Night Shift, schedule Night Shift, run a Night Shift bundle, add a repo to Night Shift, remove a repo from Night Shift, pause Night Shift on a project, or check Night Shift status.
 
   MANDATORY TRIGGERS: night-shift, night shift, nightshift, /night-shift, set up night shift, install night shift, schedule night shift, run night shift, night shift setup, night shift install
-version: 2026-04-09h
+version: 2026-04-09i
 ---
 
 # Night Shift
 
-<!-- NIGHT_SHIFT_VERSION: 2026-04-09h -->
+<!-- NIGHT_SHIFT_VERSION: 2026-04-09i -->
 
 ## Version check (run this first, every invocation)
 
@@ -174,19 +174,49 @@ repos:
 
 For the maintain trigger, list only the docs+code-fixes tasks each repo selected. For the audit trigger, list only the audit tasks each repo selected. **Never put a task id in a trigger's YAML that doesn't belong to that trigger's bundles** — the wrapper ignores mismatched ids, but keeping the YAML clean makes the trigger dashboard easier to read.
 
-All trigger-level settings stay the same:
+Use the `RemoteTrigger` tool with `action: "create"`. **Do not** include `https://github.com/perandre/night-shift` in sources — that repo is public and writing run logs to it would leak private project information.
 
-Use the `/schedule` skill or the `RemoteTrigger` tool, whichever is available. All three triggers must use:
+**Exact API body structure.** The RemoteTrigger API nests settings inside `job_config.ccr`. Here is a complete example for one trigger — follow this structure exactly:
 
-- `model`: `claude-sonnet-4-6`
-- `allowed_tools`: `["Bash", "Read", "Write", "Edit", "Glob", "Grep", "Task"]`
-- `enabled`: `true`
-- `sources[]`: the filtered repo list for each trigger (see "sources[] per trigger" above). **Do not** include `https://github.com/perandre/night-shift` — that repo is public and writing run logs to it would leak private project information.
+```json
+{
+  "name": "night-shift-build",
+  "cron_expression": "0 23 * * *",
+  "enabled": true,
+  "job_config": {
+    "ccr": {
+      "session_context": {
+        "model": "claude-sonnet-4-6",
+        "allowed_tools": ["Bash", "Read", "Write", "Edit", "Glob", "Grep", "WebFetch", "WebSearch"],
+        "sources": [
+          { "git_repository": { "url": "https://github.com/owner/repo" } }
+        ]
+      },
+      "events": [
+        {
+          "data": {
+            "type": "user",
+            "uuid": "<generate a unique uuid>",
+            "session_id": "",
+            "parent_tool_use_id": null,
+            "message": {
+              "role": "user",
+              "content": "<the prompt text>"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+Generate a fresh UUID for each trigger's `events[0].data.uuid` using `python3 -c "import uuid; print(uuid.uuid4())"`.
 
 ### Trigger 1 — Build
 
 - **name**: `night-shift-build`
-- **cron** (UTC, default): `0 23 * * *`
+- **cron_expression**: `0 23 * * *`
 - **prompt** (replace `<allowlist>` with the computed `<night-shift-config>` YAML block):
   ```
   Fetch https://raw.githubusercontent.com/perandre/night-shift/main/bundles/multi-plans.md and execute it. The wrapper auto-discovers all target repositories cloned into this session, dispatches a Task subagent per target repo.
@@ -197,7 +227,7 @@ Use the `/schedule` skill or the `RemoteTrigger` tool, whichever is available. A
 ### Trigger 2 — Maintain
 
 - **name**: `night-shift-maintain`
-- **cron** (UTC, default): `0 1 * * *`
+- **cron_expression**: `0 1 * * *`
 - **prompt** (replace `<allowlist>` with the computed `<night-shift-config>` YAML block):
   ```
   Fetch https://raw.githubusercontent.com/perandre/night-shift/main/bundles/multi-docs-and-code-fixes.md and execute it. The wrapper auto-discovers all target repositories cloned into this session, dispatches a Task subagent per target repo to run the docs bundle then the code-fixes bundle in sequence.
@@ -208,7 +238,7 @@ Use the `/schedule` skill or the `RemoteTrigger` tool, whichever is available. A
 ### Trigger 3 — Audit
 
 - **name**: `night-shift-audit`
-- **cron** (UTC, default): `0 3 * * *`
+- **cron_expression**: `0 3 * * *`
 - **prompt** (replace `<allowlist>` with the computed `<night-shift-config>` YAML block):
   ```
   Fetch https://raw.githubusercontent.com/perandre/night-shift/main/bundles/multi-audits.md and execute it. The wrapper auto-discovers all target repositories cloned into this session, dispatches a Task subagent per target repo to run find-security-issues, find-bugs, improve-seo, and improve-performance (each opening its own PR).
