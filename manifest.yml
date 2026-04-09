@@ -96,27 +96,27 @@ tasks:
 
   - id: add-tests
     title: Add tests
-    description: Finds coverage gaps and adds one new test following project conventions.
+    description: Finds coverage gaps and adds up to 10 new tests in one PR, following project conventions.
     bundle: code-fixes
-    mode: direct-to-main
+    mode: pull-request
     order: 1
     scope: app
     needs: [test, build]
 
   - id: improve-accessibility
     title: Improve accessibility
-    description: Audits key pages for WCAG 2.1 AA violations and fixes one issue.
+    description: Audits key pages against WCAG 2.1 AA criteria (contrast, keyboard, ARIA, labels, focus, headings) and fixes all violations in one PR with regression tests.
     bundle: code-fixes
-    mode: direct-to-main
+    mode: pull-request
     order: 2
     scope: app
     needs: [test, build]
 
   - id: translate-ui
     title: Translate UI
-    description: Finds hardcoded UI strings and extracts them to translation files.
+    description: Finds all hardcoded UI strings and extracts them to translation files in one PR.
     bundle: code-fixes
-    mode: direct-to-main
+    mode: pull-request
     order: 3
     scope: app
     needs: [test, build]
