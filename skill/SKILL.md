@@ -177,6 +177,7 @@ Use the `RemoteTrigger` tool with `action: "create"`. **Do not** include `https:
   "name": "night-shift-build",
   "cron_expression": "0 23 * * *",
   "enabled": true,
+  "environment_id": "default",
   "job_config": {
     "ccr": {
       "session_context": {
