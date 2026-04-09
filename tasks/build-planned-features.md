@@ -3,7 +3,9 @@
 Implement the next pending phase of **one** plan file and open a PR for it. One PR per plan. The multi-plans wrapper fans out — it dispatches one subagent per plan file, so every pending plan gets its own run and its own PR on the same night. **Never scan for or process plans beyond the one you were given.**
 
 ## Read project config first
-Read `CLAUDE.md` for the **Night Shift Config** section (test command, build command, default branch, plans dir). If not present, use the defaults documented in `bundles/_multi-runner.md`. If this task is explicitly excluded by the config, exit silently.
+Read `CLAUDE.md` for the **Night Shift Config** section (test command, build command, default branch, plans dir). If not present, use the defaults documented in `bundles/_multi-runner.md`.
+
+**Allowlist check.** If the dispatcher passed an `allowed_tasks` list and `build-planned-features` is not in it, exit silently. Absent `allowed_tasks` = all tasks allowed (backward compatible).
 
 **Scoping.** If the dispatching multi-runner passes an `app_path` (non-empty, not `—`), operate inside that app only:
 - The plans directory is `<app_path>/<plans dir>` (default `<app_path>/docs`).

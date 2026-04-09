@@ -3,7 +3,7 @@
 Find hardcoded UI strings that should be localized and fix them.
 
 ## Read project config first
-Read `CLAUDE.md` for **Night Shift Config**: doc/UI language(s), translation file location, test command, build command, push protocol. If this task is not in the task list, exit.
+Read `CLAUDE.md` for **Night Shift Config**: doc/UI language(s), translation file location, test command, build command, push protocol. If the dispatcher passed `allowed_tasks` and `translate-ui` is not in it, exit silently.
 
 **Scoping.** If the dispatching multi-runner passes an `app_path` (non-empty, not `—`), operate inside that app only:
 - Detect the i18n setup **under `<app_path>`** first. Most monorepos have per-app translation files (`<app_path>/locales/`, `<app_path>/messages/`, `<app_path>/i18n/`). Fall back to the top-level translation file location only if none exist inside the app.

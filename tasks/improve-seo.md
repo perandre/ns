@@ -3,7 +3,7 @@
 Review page metadata across the site. **One PR with all fixes.**
 
 ## Read project config first
-Read `CLAUDE.md` for **Night Shift Config**: key pages, doc/UI language, test command, build command, default branch, push protocol. If this task is not in the task list, exit.
+Read `CLAUDE.md` for **Night Shift Config**: key pages, doc/UI language, test command, build command, default branch, push protocol. If the dispatcher passed `allowed_tasks` and `improve-seo` is not in it, exit silently.
 
 **Scoping.** If the dispatching multi-runner passes an `app_path` (non-empty, not `—`), operate inside that app only:
 - Read `key pages` from the scoped config (the `apps[]` entry for this app), not the top-level list.

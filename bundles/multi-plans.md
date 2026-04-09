@@ -2,6 +2,15 @@
 
 You are running the Night Shift **Plans** bundle across **all target repositories** cloned into this session.
 
+## Parse the per-repo allowlist first
+
+Before discovering repos, scan **your own invocation prompt** for a `<night-shift-config>…</night-shift-config>` block and parse the `repos:` map out of it. See `bundles/_multi-runner.md` → **Per-repo task allowlist** for the exact contract, parsing rules, and fallback behavior. Summary:
+
+- If the block is absent or malformed, treat as "no allowlist supplied" and log `allowlist: none (running all tasks)` in the final summary.
+- Otherwise, for each repo key, the value is a list of task ids from `manifest.yml` that are allowed for that repo. Unknown ids → warn and ignore. A repo absent from the map → all tasks allowed.
+
+For the **plans** bundle, the only relevant task id is `build-planned-features`. A repo whose allowlist does not include `build-planned-features` must be recorded as `not-selected` and dispatched to no subagents — skip the plan-file discovery entirely for it.
+
 ## Discover repos
 List sibling directories at the top of your working tree. For each candidate, confirm it is a git repository via `git rev-parse --show-toplevel`.
 
@@ -12,6 +21,7 @@ List sibling directories at the top of your working tree. For each candidate, co
 For each discovered target repo, in directory-name order:
 
 1. From the main wrapper, briefly `cd` into the repo to:
+   - Look up the repo in the parsed allowlist. If `build-planned-features` is **not** in the repo's allowed list, record `not-selected` and continue (no dispatch for this repo).
    - Run `git status --porcelain` — if dirty, record `dirty-skip` and continue.
    - Check opt-out signals. Record `opted-out` and continue if any of: `.nightshift-skip` exists at the repo root, or `CLAUDE.md` / `AGENTS.md` / `README.md` contains the line `Night Shift: skip`.
    - Parse `## Night Shift Config` in `CLAUDE.md`. If it contains an `apps:` block, build one app-scope per `apps[]` entry (each with its own `app_path` + merged `scoped_config`). Otherwise build a single app-scope with `app_path = —`.
@@ -24,6 +34,7 @@ For each discovered target repo, in directory-name order:
    Your working directory is {REPO_PATH}. cd into it now.
    App scope: {APP_PATH}          # "—" means repo-wide, single-app mode
    Plan file: {PLAN_FILE}         # "—" means no plans to process; exit silent
+   Allowed tasks: [build-planned-features]   # this subagent runs this one task only
    Scoped config: {SCOPED_CONFIG}  # resolved test/build/plans dir/key pages
 
    If PLAN_FILE is "—", return `silent | PR: — | no plan files` and stop.
@@ -66,7 +77,9 @@ Night Shift plans — multi-repo summary
 
 | Repo | App | Plan | Status | PR | Notes |
 |------|-----|------|--------|----|-------|
-| ...  | <app_path or —> | <plan-slug or —> | ok / silent / opted-out / dirty-skip / failed | <url or —> | <terse> |
+| ...  | <app_path or —> | <plan-slug or —> | ok / silent / not-selected / opted-out / dirty-skip / failed | <url or —> | <terse> |
 ```
 
-One row per (repo, app, plan). `App` is `—` for single-app repos. `Plan` is `—` when the app-scope had no plan files (the row will be `silent`).
+One row per (repo, app, plan). `App` is `—` for single-app repos. `Plan` is `—` when the app-scope had no plan files (the row will be `silent`). A repo excluded from the allowlist produces one row with `App = —`, `Plan = —`, `Status = not-selected`.
+
+Include any `allowlist: …` or `allowlist warning: …` lines from the parsing step as bullet points beneath the table so the user sees them on the trigger dashboard.

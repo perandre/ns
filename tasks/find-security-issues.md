@@ -3,7 +3,7 @@
 Scan for OWASP Top 10 patterns. **One PR per issue.**
 
 ## Read project config first
-Read `CLAUDE.md` for **Night Shift Config**: test command, build command, default branch, push protocol. If this task is not in the task list, exit.
+Read `CLAUDE.md` for **Night Shift Config**: test command, build command, default branch, push protocol. If the dispatcher passed `allowed_tasks` and `find-security-issues` is not in it, exit silently.
 
 **Scoping.** Secret scanning is always repo-wide. The OWASP code review is per-app when the dispatching multi-runner passes an `app_path` (non-empty, not `—`):
 - If `app_path` is set, review only code under `<app_path>` for injection / auth / CSRF / XSS patterns.

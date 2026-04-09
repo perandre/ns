@@ -8,6 +8,17 @@ This is a runtime composition that exists because the trigger plan only allows 3
 
 Docs tasks edit markdown only and never affect the test suite. Code-fixes tasks require a green test baseline. Running docs first means: even if a code-fixes task fails verification on a particular repo, that repo still gets its docs updates.
 
+## Parse the per-repo allowlist first
+
+Before discovering repos, scan **your own invocation prompt** for a `<night-shift-config>…</night-shift-config>` block and parse the `repos:` map out of it. See `bundles/_multi-runner.md` → **Per-repo task allowlist** for the exact contract. If absent or malformed → no allowlist (all tasks allowed), log `allowlist: none (running all tasks)` in the summary.
+
+This wrapper runs **two** bundles. Fetch `https://raw.githubusercontent.com/perandre/night-shift/main/manifest.yml` once and collect task ids per bundle dynamically — do **not** hardcode lists here so new tasks flow through automatically. For each repo compute:
+
+- `docs_allowed = allowlist[repo] ∩ <manifest tasks where bundle=docs>`
+- `fixes_allowed = allowlist[repo] ∩ <manifest tasks where bundle=code-fixes>`
+
+If **both** are empty, record `not-selected` for that repo and do not dispatch. If only one is empty, the corresponding inner bundle will receive an empty `allowed_tasks` and self-skip, while the other still runs.
+
 ## Discover repos
 List sibling directories at the top of your working tree. For each candidate, confirm via `git rev-parse --show-toplevel`.
 
@@ -20,6 +31,7 @@ In a repo with an `apps:` block: one subagent is dispatched per `apps[]` entry. 
 For each discovered target repo, in directory-name order:
 
 1. From the main wrapper, briefly `cd` into the repo to:
+   - Look up the repo in the parsed allowlist. If `docs_allowed` AND `fixes_allowed` are both empty, record `not-selected` and continue (no dispatch for this repo).
    - `git status --porcelain` — if dirty, record `dirty-skip` and continue.
    - Check opt-out signals (`.nightshift-skip`, or `Night Shift: skip` in `CLAUDE.md` / `AGENTS.md` / `README.md`). Record `opted-out` and continue if any are present.
    - Parse `## Night Shift Config` in `CLAUDE.md`. If it contains an `apps:` block, build one work-item per `apps[]` entry (with merged `scoped_config`). Otherwise build a single work-item with `app_path = —`.
@@ -30,20 +42,26 @@ For each discovered target repo, in directory-name order:
    Your working directory is {REPO_PATH}. cd into it now.
    App scope: {APP_PATH}          # "—" means repo-wide, single-app mode
    Scoped config: {SCOPED_CONFIG}
+   Docs allowed tasks: {DOCS_ALLOWED}     # YAML list; may be empty
+   Code-fixes allowed tasks: {FIXES_ALLOWED}  # YAML list; may be empty
    Run scope:repo tasks: {RUN_REPO_SCOPED_TASKS}  # when false, skip document-decisions + suggest-improvements
 
    You are running TWO night-shift bundles in sequence: docs, then code-fixes.
 
    Step 1 — DOCS:
-   Fetch https://raw.githubusercontent.com/perandre/night-shift/main/bundles/docs.md
+   If DOCS_ALLOWED is empty, skip this step with outcome `silent` (note: not-selected).
+   Otherwise, fetch https://raw.githubusercontent.com/perandre/night-shift/main/bundles/docs.md
    and execute it against this repository, scoped to {APP_PATH} when it is not "—".
-   When RUN_REPO_SCOPED_TASKS is false, skip the `document-decisions` and
+   Pass `allowed_tasks: DOCS_ALLOWED` to the inner bundle so each task self-filters.
+   When RUN_REPO_SCOPED_TASKS is false, also skip the `document-decisions` and
    `suggest-improvements` tasks — they already ran in another app's subagent for
    this repo. Capture the outcome (ok / silent / failed) as the docs result.
 
    Step 2 — CODE FIXES (always run, regardless of docs outcome):
-   Fetch https://raw.githubusercontent.com/perandre/night-shift/main/bundles/code-fixes.md
+   If FIXES_ALLOWED is empty, skip this step with outcome `silent` (note: not-selected).
+   Otherwise, fetch https://raw.githubusercontent.com/perandre/night-shift/main/bundles/code-fixes.md
    and execute it against this repository, scoped to {APP_PATH} when it is not "—".
+   Pass `allowed_tasks: FIXES_ALLOWED` to the inner bundle so each task self-filters.
    All code-fixes tasks are scope: app. Capture the outcome as the code-fixes result.
 
    CLAUDE.md is optional. Honor `## Night Shift Config` if present, otherwise apply
@@ -77,7 +95,7 @@ Night Shift docs+code-fixes — multi-repo summary
 
 | Repo | App | Status | Docs | Code fixes | Notes |
 |------|-----|--------|------|------------|-------|
-| ...  | <app_path or —> | ok / silent / opted-out / dirty-skip / failed | ok / silent / failed / — | ok / silent / failed / — | <terse> |
+| ...  | <app_path or —> | ok / silent / not-selected / opted-out / dirty-skip / failed | ok / silent / failed / — | ok / silent / failed / — | <terse> |
 ```
 
 The `App` column shows `—` for single-app repos and one row per app for monorepos that declare `apps:`.

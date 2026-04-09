@@ -3,7 +3,7 @@
 Find coverage gaps and add tests following the project's existing patterns.
 
 ## Read project config first
-Read `CLAUDE.md` for **Night Shift Config**: test command, build command, push protocol. If this task is not in the task list, exit.
+Read `CLAUDE.md` for **Night Shift Config**: test command, build command, push protocol. If the dispatcher passed `allowed_tasks` and `add-tests` is not in it, exit silently.
 
 **Scoping.** If the dispatching multi-runner passes an `app_path` (non-empty, not `—`), operate inside that app only:
 - Only walk files under `<app_path>` when hunting for coverage gaps.

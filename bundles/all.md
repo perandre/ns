@@ -14,6 +14,10 @@ Run these in order. Each is a self-contained bundle prompt; fetch the file, read
 3. **code-fixes** — https://raw.githubusercontent.com/perandre/night-shift/main/bundles/code-fixes.md
 4. **audits** — https://raw.githubusercontent.com/perandre/night-shift/main/bundles/audits.md
 
+## Allowlist (optional)
+
+If the caller passes `allowed_tasks` (a list of task ids), propagate it to each inner bundle. Each inner bundle intersects its own task list against the allowlist and skips non-matching tasks. Absent `allowed_tasks` = all tasks allowed (the default for a one-shot manual run).
+
 ## Rules
 
 - Plans goes first because it may add features the doc tasks should then cover.

@@ -3,7 +3,7 @@
 Generate or update end-user documentation derived from UI routes and components.
 
 ## Read project config first
-Read `CLAUDE.md` for **Night Shift Config**: doc language, key pages, push protocol. If this task is not in the task list, exit.
+Read `CLAUDE.md` for **Night Shift Config**: doc language, key pages, push protocol. If the dispatcher passed `allowed_tasks` and `update-user-guide` is not in it, exit silently.
 
 **Scoping.** If the dispatching multi-runner passes an `app_path` (non-empty, not `—`):
 - Prefer a per-app user manual at `<app_path>/docs/USER-MANUAL.md`. Create it if missing.

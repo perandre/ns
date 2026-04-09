@@ -2,6 +2,12 @@
 
 You are running the Night Shift **Audits** bundle across **all target repositories** cloned into this session.
 
+## Parse the per-repo allowlist first
+
+Before discovering repos, scan **your own invocation prompt** for a `<night-shift-config>…</night-shift-config>` block and parse the `repos:` map out of it. See `bundles/_multi-runner.md` → **Per-repo task allowlist** for the exact contract. If absent or malformed → no allowlist (all tasks allowed), log `allowlist: none (running all tasks)` in the summary.
+
+Fetch `https://raw.githubusercontent.com/perandre/night-shift/main/manifest.yml` once and collect the set of task ids where `bundle: audits` — this is the authoritative bundle task set. Do **not** hardcode a list here; new audit tasks added to the manifest must flow through automatically. For each repo compute `audits_allowed = allowlist[repo] ∩ <manifest audits tasks>`. If empty, record `not-selected` for that repo and dispatch nothing.
+
 ## Discover repos
 List sibling directories at the top of your working tree. For each candidate, confirm via `git rev-parse --show-toplevel`.
 
@@ -12,6 +18,7 @@ All four audit tasks are `scope: app` in `manifest.yml`, so monorepo fan-out app
 For each discovered target repo, in directory-name order:
 
 1. From the main wrapper, briefly `cd` into the repo to:
+   - Look up the repo in the parsed allowlist. If `audits_allowed` is empty, record `not-selected` and continue (no dispatch for this repo).
    - `git status --porcelain` — if dirty, record `dirty-skip` and continue.
    - Check opt-out signals (`.nightshift-skip`, or `Night Shift: skip` in `CLAUDE.md` / `AGENTS.md` / `README.md`). Record `opted-out` and continue if any are present.
    - Parse `## Night Shift Config` in `CLAUDE.md`. If it contains an `apps:` block, build one work-item per `apps[]` entry (with merged `scoped_config`). Otherwise build a single work-item with `app_path = —`.
@@ -22,10 +29,13 @@ For each discovered target repo, in directory-name order:
    Your working directory is {REPO_PATH}. cd into it now.
    App scope: {APP_PATH}          # "—" means repo-wide, single-app mode
    Scoped config: {SCOPED_CONFIG}
+   Allowed tasks: {AUDITS_ALLOWED}   # YAML list of audit task ids for this repo
    Run repo-wide secret scan: {RUN_REPO_SECRET_SCAN}
 
    Fetch https://raw.githubusercontent.com/perandre/night-shift/main/bundles/audits.md
    and execute it against this repository, scoped to {APP_PATH} when it is not "—".
+   Pass `allowed_tasks: AUDITS_ALLOWED` to the inner bundle so each audit task
+   self-filters (tasks not in the list exit silently).
    The bundle runs find-security-issues, find-bugs, improve-seo, and improve-performance.
    Each task creates its own branch + PR. Return to the default branch with a clean
    working tree before each task.
@@ -63,7 +73,7 @@ Night Shift audits — multi-repo summary
 
 | Repo | App | Status | PRs opened | Notes |
 |------|-----|--------|-----------|-------|
-| ...  | <app_path or —> | ok / silent / opted-out / dirty-skip / failed | <urls or —> | <terse> |
+| ...  | <app_path or —> | ok / silent / not-selected / opted-out / dirty-skip / failed | <urls or —> | <terse> |
 ```
 
 The `App` column shows `—` for single-app repos and one row per app for monorepos that declare `apps:`.

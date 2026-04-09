@@ -6,12 +6,12 @@ description: |
   Use this skill when the user explicitly asks to: install Night Shift, set up Night Shift, schedule Night Shift, run a Night Shift bundle, add a repo to Night Shift, remove a repo from Night Shift, pause Night Shift on a project, or check Night Shift status.
 
   MANDATORY TRIGGERS: night-shift, night shift, nightshift, /night-shift, set up night shift, install night shift, schedule night shift, run night shift, night shift setup, night shift install
-version: 2026-04-09b
+version: 2026-04-09c
 ---
 
 # Night Shift
 
-<!-- NIGHT_SHIFT_VERSION: 2026-04-09b -->
+<!-- NIGHT_SHIFT_VERSION: 2026-04-09c -->
 
 ## Version check (run this first, every invocation)
 
@@ -67,14 +67,15 @@ Before welcoming the user, list their scheduled triggers via the `RemoteTrigger`
   > | audits | `<local time>` | `<repo list>` |
   >
   > What would you like to do?
-  > - **Add a repo** to all three jobs
-  > - **Remove a repo** from all three jobs
+  > - **Add a repo** to all jobs (runs the task picker for the new repo)
+  > - **Remove a repo** from all jobs
+  > - **Change tasks for a repo** (re-run the picker for one existing repo)
   > - **Change the schedule** of one or more jobs
   > - **Pause** a job (disable it)
   > - **Delete everything** and start over
   > - **Nothing** — just wanted to check
 
-  Dispatch to the matching runbook section (Add/remove a repo, Status, etc.) based on their answer. Never silently re-create triggers that already exist.
+  Dispatch to the matching runbook section (see **Add a repo**, **Remove a repo**, **Change tasks for a repo** below). Never silently re-create triggers that already exist.
 
 **Step 1 — Welcome and explain, then ask one question.**
 
@@ -92,51 +93,147 @@ Send a single message that welcomes, states what Night Shift will do for them, a
 
 Accept any of: `https://github.com/owner/repo`, `owner/repo`, `git@github.com:owner/repo.git`. Normalise to `https://github.com/owner/repo` (strip `.git`). If the user gives zero repos, stop and tell them to come back when they have at least one.
 
-**Step 2 — Confirm and create.**
+**Step 2 — Per-repo task picker.**
 
-Once you have the repo list, pick sensible defaults for everything else (schedule below, Europe/Oslo unless you already know otherwise) and show a single concise confirmation:
+For each repo in the list, in the order the user gave them, run the picker loop below. You build up an in-memory map `selection[repo] = [task_id, …]` that gets baked into the trigger prompts in Step 4.
 
-> About to create three nightly triggers on your account for: `<repo list>`. Schedule: plans 01:00, docs+fixes 03:00, audits 05:00 (Europe/Oslo). Proceed?
+**Picker defaults:** all 12 tasks on per repo. The 4 audit tasks get a one-line warning so the user understands the blast radius before accepting.
+
+**Picker loop** (repeat per repo until the user says `next`):
+
+1. Render this block, pulling titles/descriptions from `manifest.yml` (fetch it once and cache for the session):
+
+   ```
+   ─── <repo url> (repo N of M) ───
+
+   Pick which Night Shift tasks should run on this repo. Defaults are all-on;
+   deselect what you don't want. The 4 audit tasks (9–12) open a PR every night
+   when they find something — enable deliberately.
+
+   Plans
+     [x] 1. build-planned-features — Build planned features
+   Docs
+     [x] 2. update-changelog       — Update changelog
+     [x] 3. update-user-guide      — Update user guide
+     [x] 4. document-decisions     — Document decisions (ADRs)
+     [x] 5. suggest-improvements   — Suggest improvements
+   Code fixes
+     [x] 6. add-tests              — Add tests
+     [x] 7. improve-accessibility  — Improve accessibility
+     [x] 8. translate-ui           — Translate UI strings
+   Audits  (each opens a PR every night when issues are found)
+     [x] 9. find-security-issues   — Find security issues
+     [x] 10. find-bugs             — Find bugs
+     [x] 11. improve-seo           — Improve SEO
+     [x] 12. improve-performance   — Improve performance
+
+   Commands:  "3 5 8" toggle   "only 9 10" select-exclusive
+              "all plans"      "none audits"  (bundle shortcuts)
+              "all" / "none"   "next"  "back"
+   ```
+
+2. Read the user's response. Apply the command to the current selection for this repo:
+   - Bare numbers (`3 5 8`) → toggle each.
+   - `only N M …` → set selection to exactly those ids.
+   - `all` / `none` → all 12 on / all 12 off.
+   - `all <bundle>` / `none <bundle>` → all tasks in that bundle (`plans`, `docs`, `code-fixes`, `audits`) on or off.
+   - `next` → store the selection for this repo and advance. If this was the last repo, exit the loop.
+   - `back` → pop to the previous repo, restore its selection, and re-render.
+
+3. **Reprint the full list with updated checkboxes every turn** so the user never loses track across conversational turns. Don't reply with only a diff.
+
+4. If a repo's final selection is empty, that's fine — it means "this repo has no nightly work at all". Record it and move on; the create step will skip it from `sources[]` on every trigger.
+
+**Step 3 — Schedule confirm.**
+
+Show a compact summary of the picker output and the default schedule, ask for confirmation:
+
+> **Selections:**
+>
+> | Repo | Tasks |
+> |---|---|
+> | `owner/repo-a` | 8 selected (plans, docs, code-fixes) |
+> | `owner/repo-b` | 3 selected (find-bugs, improve-seo, improve-performance) |
+>
+> **Schedule** (Europe/Oslo): plans 01:00, docs+fixes 03:00, audits 05:00.
+>
+> Proceed?
 
 Default schedule → UTC cron: plans `0 23 * * *`, docs+code-fixes `0 1 * * *`, audits `0 3 * * *`. If the user wants to tweak schedule or timezone, do it now, then proceed on explicit confirmation. If they decline, stop.
 
-**Step 3 — Create the triggers.**
+**Step 4 — Create the triggers.**
+
+**Which triggers get created.** Fetch `https://raw.githubusercontent.com/perandre/night-shift/main/manifest.yml` (you already fetched it for the picker in Step 2 — reuse the cache) and compute, per trigger, the set of task ids that belong to it by bundle membership:
+
+- **plans trigger** — tasks where `bundle: plans`.
+- **docs+code-fixes trigger** — tasks where `bundle: docs` OR `bundle: code-fixes`.
+- **audits trigger** — tasks where `bundle: audits`.
+
+**Do not hardcode task ids in the skill.** Always derive them from `manifest.yml` so new tasks added later flow through automatically.
+
+A trigger is created only if at least one repo's selection has a non-empty intersection with that trigger's task set.
+
+**If a trigger's task set is empty across all repos, do not create that trigger.** This saves a slot against the 3-trigger cap. Tell the user which ones were skipped and why in Step 5's summary. The next time the user adds a task back in via "Change tasks for a repo", the skill re-creates the missing trigger.
+
+**`sources[]` per trigger.** Include only repos whose selection includes at least one task belonging to that trigger's bundles. A repo with zero tasks in a bundle is not cloned for that trigger — it saves compute and keeps the summary clean.
+
+**Inline the allowlist.** Each trigger's prompt gets a `<night-shift-config>` block appended. Example for the plans trigger:
+
+```
+Fetch https://raw.githubusercontent.com/perandre/night-shift/main/bundles/multi-plans.md and execute it. The wrapper auto-discovers all target repositories cloned into this session, dispatches a Task subagent per target repo.
+
+<night-shift-config>
+repos:
+  https://github.com/owner/repo-a: [build-planned-features]
+  https://github.com/owner/repo-b: [build-planned-features]
+</night-shift-config>
+```
+
+For the docs+code-fixes trigger, list only the docs+code-fixes tasks each repo selected. For the audits trigger, list only the audits tasks each repo selected. **Never put a task id in a trigger's YAML that doesn't belong to that trigger's bundles** — the wrapper ignores mismatched ids, but keeping the YAML clean makes the trigger dashboard easier to read.
+
+All trigger-level settings stay the same:
 
 Use the `/schedule` skill or the `RemoteTrigger` tool, whichever is available. All three triggers must use:
 
 - `model`: `claude-sonnet-4-6`
 - `allowed_tools`: `["Bash", "Read", "Write", "Edit", "Glob", "Grep", "Task"]`
 - `enabled`: `true`
-- `sources[]`: every repo from Step 2. **Do not** include `https://github.com/perandre/night-shift` — that repo is public and writing run logs to it would leak private project information.
+- `sources[]`: the filtered repo list for each trigger (see "sources[] per trigger" above). **Do not** include `https://github.com/perandre/night-shift` — that repo is public and writing run logs to it would leak private project information.
 
 ### Trigger 1 — Plans
 
 - **name**: `night-shift-bundle-plans`
 - **cron** (UTC, default): `0 23 * * *`
-- **prompt**:
+- **prompt** (replace `<allowlist>` with the computed `<night-shift-config>` YAML block):
   ```
   Fetch https://raw.githubusercontent.com/perandre/night-shift/main/bundles/multi-plans.md and execute it. The wrapper auto-discovers all target repositories cloned into this session, dispatches a Task subagent per target repo.
+
+  <allowlist>
   ```
 
 ### Trigger 2 — Docs + code-fixes
 
 - **name**: `night-shift-bundle-docs-and-code-fixes`
 - **cron** (UTC, default): `0 1 * * *`
-- **prompt**:
+- **prompt** (replace `<allowlist>` with the computed `<night-shift-config>` YAML block):
   ```
   Fetch https://raw.githubusercontent.com/perandre/night-shift/main/bundles/multi-docs-and-code-fixes.md and execute it. The wrapper auto-discovers all target repositories cloned into this session, dispatches a Task subagent per target repo to run the docs bundle then the code-fixes bundle in sequence.
+
+  <allowlist>
   ```
 
 ### Trigger 3 — Audits
 
 - **name**: `night-shift-bundle-audits`
 - **cron** (UTC, default): `0 3 * * *`
-- **prompt**:
+- **prompt** (replace `<allowlist>` with the computed `<night-shift-config>` YAML block):
   ```
   Fetch https://raw.githubusercontent.com/perandre/night-shift/main/bundles/multi-audits.md and execute it. The wrapper auto-discovers all target repositories cloned into this session, dispatches a Task subagent per target repo to run find-security-issues, find-bugs, improve-seo, and improve-performance (each opening its own PR).
+
+  <allowlist>
   ```
 
-**Step 4 — Handle the trigger cap.**
+**Step 4b — Handle the trigger cap.**
 
 If the user's plan rejects the create with `trigger_limit_reached`, tell them:
 
@@ -146,23 +243,26 @@ The cap appears to count enabled triggers. Disabled ones may also count, dependi
 
 **Step 5 — Summarise.**
 
-Once all three triggers are created, print:
+Once all triggers that should exist have been created, print:
 
 ```
 ✓ Night Shift is set up.
 
-| Job | Schedule | Repos |
-|---|---|---|
-| plans | <local time> | <N> |
-| docs + code-fixes | <local time> | <N> |
-| audits | <local time> | <N> |
+| Job | Schedule | Repos | Tasks |
+|---|---|---|---|
+| plans | <local time> | <N> | <M> selected |
+| docs + code-fixes | <local time> | <N> | <M> selected |
+| audits | <local time> | <N> | <M> selected |
+
+(Skipped: <any triggers not created because no repo selected any of their
+tasks — list them here, or "none" if all three were created.)
 
 Tomorrow morning, check docs/NIGHTSHIFT-HISTORY.md in each repo for what
 happened. The full summary table for each run is also in the trigger
 dashboard at https://claude.ai/code/scheduled. To pause Night Shift on
-any project, drop a .nightshift-skip file at its root. To customise per
-project, add a Night Shift Config section to that project's CLAUDE.md.
-See https://github.com/perandre/night-shift for the full reference.
+any project, drop a .nightshift-skip file at its root. To change which
+tasks run on a repo, re-run /night-shift and pick "Change tasks for a
+repo". See https://github.com/perandre/night-shift for the full reference.
 ```
 
 ## Test-once runbook (no scheduling)
@@ -175,9 +275,44 @@ When the user wants to try Night Shift on the current repo without scheduling an
 4. Append a row per bundle to `docs/NIGHTSHIFT-HISTORY.md` and commit.
 5. Print the same summary table format as the multi-* wrappers.
 
-## Add or remove a repo
+## Parse-merge-rewrite contract
 
-Use the `RemoteTrigger` tool to update each existing night-shift trigger's `sources[]` array. List current triggers first, identify the night-shift ones (names starting with `night-shift-bundle-`), then update all of them in parallel.
+All post-setup operations (add repo, remove repo, change tasks) must **read the current trigger prompt, parse the `<night-shift-config>` YAML block, merge the change in memory, and rewrite the prompt** — never regenerate from scratch. This preserves any hand-edits the user made in the Claude Code dashboard (different wrapper URL, extra instructions, etc.).
+
+Steps, for each of the three triggers in turn:
+
+1. Read the trigger's current `prompt` via `RemoteTrigger` (`action: "get"`).
+2. Locate the `<night-shift-config>` / `</night-shift-config>` delimiters. If absent, treat the current state as "all tasks allowed for all repos" and synthesise a full map from the current `sources[]`.
+3. Parse the YAML, apply the change (add key, remove key, replace value), re-serialise.
+4. Splice the new YAML back between the delimiters, preserving everything else in the prompt.
+5. Update `sources[]` to match the union of `repos:` keys.
+6. Write back via `RemoteTrigger` (`action: "update"`).
+
+If merging produces an empty `repos:` map for a trigger, **delete that trigger** (not just update it). If a merge would re-populate a trigger that was previously deleted, **re-create it** using the Step 4 template from the Setup runbook.
+
+## Add a repo
+
+1. Ask the user for the repo URL(s). Normalise the same way as Step 1.
+2. For each new repo, run the **Step 2 picker loop** so the user selects its tasks.
+3. For each of the three triggers, parse-merge-rewrite: add the repo to `sources[]` and to the `repos:` map with its selected tasks (filtered to the tasks belonging to that trigger's bundles).
+4. If a trigger doesn't currently exist but the new repo has tasks for it, create it fresh using the Setup Step 4 template.
+5. Print a summary of which triggers were updated / created, the repos added, and the task counts.
+
+## Remove a repo
+
+1. Ask the user which repo(s) to remove from the installation.
+2. For each of the three triggers, parse-merge-rewrite: drop the repo from `sources[]` and from the `repos:` map.
+3. If a trigger's `repos:` map becomes empty, delete the trigger entirely.
+4. Print a summary.
+
+## Change tasks for a repo
+
+1. List the current triggers and their `repos:` keys so the user can pick a repo. (Reject input for repos that aren't present in any trigger.)
+2. Parse the three trigger prompts to recover the repo's **union** of currently selected tasks across bundles — this is the starting state for the picker.
+3. Run the **Step 2 picker loop** for that one repo, pre-checked with the current selection.
+4. For each of the three triggers, parse-merge-rewrite: replace the repo's entry in `repos:` with the new selection filtered to that trigger's bundles. Remove the repo entirely from a trigger if no task in that trigger's bundles is selected. Add it back to `sources[]` and `repos:` if new tasks in a trigger's bundles are selected.
+5. Create or delete triggers as needed when the map goes from empty → non-empty or vice versa.
+6. Print a diff-style summary: "repo-a: +add-tests, -find-bugs".
 
 ## Status
 

@@ -26,7 +26,9 @@ In any Claude Code session, type:
 /night-shift
 ```
 
-Claude will ask what you want to do (set up, test once, add a repo, status), walk you through it interactively, and confirm with you before creating any scheduled triggers.
+Claude will ask what you want to do (set up, test once, add a repo, change tasks for a repo, status), walk you through it interactively, and confirm with you before creating any scheduled triggers.
+
+During setup, `/night-shift` runs a **per-repo task picker** — for each repo you add, you choose which of the 12 tasks should run nightly. Defaults are all-on, with a warning that the 4 audit tasks open PRs when they find issues. To change a repo's selection later, re-run `/night-shift` and pick **Change tasks for a repo**.
 
 
 ## What you'll find in your repo tomorrow morning
@@ -65,13 +67,14 @@ Add a `## Night Shift Config` section to the project's `CLAUDE.md`. All fields a
 
 ```markdown
 ## Night Shift Config
-- Tasks: build-planned-features, update-changelog, add-tests, find-security-issues
 - Doc language: Norwegian (nb)
 - Test command: npm test
 - Build command: npm run build
 - Push: git push mirror main && git push origin main
 - Key pages: /dashboard, /surveys, /people
 ```
+
+**Task selection is not in this file.** Which tasks run on which repo is decided at setup time via the picker in `/night-shift`, and stored in the trigger prompts themselves. To change a repo's task selection, re-run `/night-shift` and pick **Change tasks for a repo**.
 
 ## How to add a project, add a task, or run something now
 

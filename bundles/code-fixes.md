@@ -11,6 +11,7 @@ Fetch and parse https://raw.githubusercontent.com/perandre/night-shift/main/mani
 
 - Read `bundles.code-fixes` for this bundle's settings.
 - Read `tasks[]` and select all entries where `bundle: code-fixes`. Sort by `order` ascending. This is the canonical task list — **do not** rely on a hardcoded list anywhere else.
+- **Allowlist filter.** If the dispatcher passed `allowed_tasks` (a list of task ids), intersect the bundle's task list against it. Tasks not in `allowed_tasks` are skipped entirely. Absent `allowed_tasks` = all tasks allowed.
 
 ## Execute
 

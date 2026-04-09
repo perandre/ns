@@ -3,7 +3,7 @@
 Update the project's changelog if there are new user-facing changes since the last entry.
 
 ## Read project config first
-Read `CLAUDE.md` for the **Night Shift Config** section: doc language, changelog format, push protocol. If this task is not in the task list, exit.
+Read `CLAUDE.md` for the **Night Shift Config** section: doc language, changelog format, push protocol. If the dispatcher passed `allowed_tasks` and `update-changelog` is not in it, exit silently.
 
 **Scoping.** If the dispatching multi-runner passes an `app_path` (non-empty, not `—`):
 - Prefer a per-app changelog at `<app_path>/CHANGELOG.md`. Create it if missing.

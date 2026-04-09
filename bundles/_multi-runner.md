@@ -2,6 +2,40 @@
 
 This file documents the loop semantics used by the `multi-*.md` wrappers. It is not fetched by triggers directly — it's reference reading for the wrappers and for humans editing them.
 
+## Per-repo task allowlist (the `<night-shift-config>` block)
+
+The skill stores the per-repo task selection **inside the trigger prompt itself**, as a YAML block between explicit delimiters. The wrapper parses this block out of its own invocation prompt on every run and uses it to filter which tasks it dispatches per repo.
+
+**Format** (exact delimiters, no variations):
+
+```
+<night-shift-config>
+repos:
+  https://github.com/owner/repo-a: [build-planned-features, update-changelog, add-tests]
+  https://github.com/owner/repo-b: [find-bugs, improve-seo]
+</night-shift-config>
+```
+
+- Keys are full `https://github.com/owner/repo` URLs (no `.git`, matching how they appear in the trigger's `sources[]`). For a monorepo with `apps:`, a future version may accept `https://github.com/owner/repo#app-slug` keys; unknown `#…` suffixes must fall back to the bare repo key.
+- Values are YAML lists of **task ids** from `manifest.yml` (e.g. `build-planned-features`, not `task 1`). Task ids are the contract end-to-end — never numbers.
+- An empty list `[]` means "no tasks for this repo in this bundle"; the wrapper records `not-selected` in the summary and dispatches nothing for that repo.
+- A repo absent from `repos:` defaults to **all tasks allowed** (same as no config block at all). This keeps single-repo ad-hoc invocations working.
+
+**Parsing rules** — the wrapper is itself an LLM subagent, so robustness matters:
+
+1. Scan your own invocation prompt for the literal strings `<night-shift-config>` and `</night-shift-config>`. Extract everything between.
+2. Parse as YAML. If parsing fails, the delimiter is missing, or the block is empty → treat as "no allowlist supplied". Log **one line** in the final summary: `allowlist: none (running all tasks)`.
+3. If a listed task id doesn't appear in `manifest.yml`, warn (one line in the summary: `allowlist warning: unknown task id <id> for <repo>`) and ignore that id. Never crash the run.
+4. If a repo URL in `repos:` isn't among the cloned sources, warn (`allowlist warning: repo <url> in config but not cloned`) and ignore.
+
+**How the wrapper applies the allowlist** — in the work-item loop, for each repo:
+
+- Look up the repo's allowlist. Absent → all tasks allowed (this bundle's full task set from `manifest.yml`).
+- Intersect the allowlist against the set of this bundle's tasks. If the intersection is empty, record `not-selected` for that repo and do not dispatch any subagents for it.
+- Pass `allowed_tasks: [<intersection as YAML list>]` to every subagent dispatched for this repo. Subagents forward it to the inner bundle and each task, which self-check their own id against the list and exit silently if not present.
+
+**When the user hand-edits the prompt.** The skill's add/remove/update-repo flows must **read the current trigger prompt, parse the YAML, merge the change, and rewrite** — never regenerate from scratch. This preserves any hand-edits the user made in the Claude Code dashboard.
+
 ## How the trigger lays out repos
 
 When a trigger declares multiple `sources[]` entries with `git_repository`, the remote environment clones each one as a sibling directory at the top of the working tree:

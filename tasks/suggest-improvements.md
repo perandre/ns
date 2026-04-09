@@ -3,7 +3,7 @@
 Analyze the codebase for improvement ideas to pitch to the client. This is a **discovery** task — do not change code.
 
 ## Read project config first
-Read `CLAUDE.md` for **Night Shift Config**: doc language, push protocol. If this task is not in the task list, exit.
+Read `CLAUDE.md` for **Night Shift Config**: doc language, push protocol. If the dispatcher passed `allowed_tasks` and `suggest-improvements` is not in it, exit silently.
 
 **Scoping.** This task is `scope: repo` in `manifest.yml`. Suggestions span the whole product, so even in a monorepo with `apps:` configured, this task runs **once per repo**, not once per app. Ignore any `app_path` passed by the multi-runner — the multi-docs-and-code-fixes wrapper will only dispatch this task during the first work-item of a repo.
 

@@ -11,6 +11,7 @@ Fetch and parse https://raw.githubusercontent.com/perandre/night-shift/main/mani
 
 - Read `bundles.plans` for this bundle's settings (`parallelism`, `stop_on_failure`, `mode`).
 - Read `tasks[]` and select all entries where `bundle: plans`. Sort by `order` ascending. This is the canonical task list — **do not** rely on a hardcoded list anywhere else.
+- **Allowlist filter.** If the dispatcher passed `allowed_tasks` (a list of task ids), intersect the bundle's task list against it. Tasks not in `allowed_tasks` are skipped entirely (no fetch, no execute). Absent `allowed_tasks` = all tasks allowed.
 
 ## Execute
 
