@@ -35,7 +35,7 @@ bundles:
     stop_on_failure: false
   docs:
     title: Update documentation
-    description: Refresh changelog, user guide, decision records, and suggestion list.
+    description: Refresh changelog, user guide, project docs, decision records, and suggestion list.
     schedule_hint: weekly
     parallelism: independent
     stop_on_failure: false
@@ -86,12 +86,20 @@ tasks:
     order: 3
     scope: repo
 
+  - id: update-project-docs
+    title: Update project docs
+    description: Discovers and refreshes all project documentation (README, CONCEPT, TECH, MODELS, ECOSYSTEM, PRODUCTION-READINESS, etc.) that changed since last update.
+    bundle: docs
+    mode: direct-to-main
+    order: 4
+    scope: repo
+
   - id: suggest-improvements
     title: Suggest improvements
     description: Analyzes the codebase for improvement ideas to pitch to stakeholders.
     bundle: docs
     mode: direct-to-main
-    order: 4
+    order: 5
     scope: repo
 
   - id: add-tests
