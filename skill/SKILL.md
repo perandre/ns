@@ -6,12 +6,12 @@ description: |
   Use this skill when the user explicitly asks to: install Night Shift, set up Night Shift, schedule Night Shift, run a Night Shift bundle, add a repo to Night Shift, remove a repo from Night Shift, pause Night Shift on a project, or check Night Shift status.
 
   MANDATORY TRIGGERS: night-shift, night shift, nightshift, /night-shift, set up night shift, install night shift, schedule night shift, run night shift, night shift setup, night shift install
-version: 2026-04-09c
+version: 2026-04-09e
 ---
 
 # Night Shift
 
-<!-- NIGHT_SHIFT_VERSION: 2026-04-09d -->
+<!-- NIGHT_SHIFT_VERSION: 2026-04-09e -->
 
 ## Version check (run this first, every invocation)
 
@@ -106,23 +106,22 @@ For each repo in the list, in the order the user gave them, run the picker loop 
 2. Call `AskUserQuestion` with **3 questions**, all `multiSelect: true`. Mention the repo URL and progress (`repo N of M`) in the first question. Each option's `label` is the task id (e.g. `find-bugs`) and `description` is the human title from `manifest.yml`. Phrase questions to make clear all tasks are recommended.
 
    **Question 1 — "Plans + Docs"** (header: `Plans+Docs`):
-   - `build-planned-features`
-   - `update-changelog`
-   - `update-user-guide`
-   - `document-decisions`
+   - `build-planned-features` — Build planned features
+   - `update-docs` — Update all documentation (changelog, user guide, ADRs, suggestions)
 
-   **Question 2 — "Docs + Code-fixes"** (header: `Docs+Code`):
-   - `suggest-improvements`
-   - `add-tests`
-   - `improve-accessibility`
-   - `translate-ui`
+   **Question 2 — "Code fixes"** (header: `Code fixes`):
+   - `add-tests` — Add tests
+   - `improve-accessibility` — Improve accessibility
+   - `translate-ui` — Translate UI
 
    **Question 3 — "Audits"** (header: `Audits`):
    Warn that active audit tasks open PRs nightly when they find issues.
-   - `find-security-issues`
-   - `find-bugs`
-   - `improve-seo`
-   - `improve-performance`
+   - `find-security-issues` — Find security issues
+   - `find-bugs` — Find bugs
+   - `improve-seo` — Improve SEO
+   - `improve-performance` — Improve performance
+
+   **Meta-option expansion.** `update-docs` is a picker shorthand, not a real task id. When building `selection[repo]`, expand it to the four individual doc task ids: `update-changelog`, `update-user-guide`, `document-decisions`, `suggest-improvements`. The allowlist and trigger config always use real task ids from `manifest.yml` — never the meta-option name.
 
 3. Merge selected ids from all 3 questions into `selection[repo]` and move to the next repo. If the user selected nothing across all questions, record the empty set — the create step will skip the repo.
 
