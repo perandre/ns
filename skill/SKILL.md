@@ -83,11 +83,11 @@ Then:
   > - **Change tasks for a repo** (re-run the picker for one existing repo)
   > - **Change the schedule**
   > - **Pause** a job / workflow
-  > - **Delete everything** and start over
+  > - **Delete everything** and start over (re-choose backend)
   > - **Add GitHub Actions** to more repos (if using Schedule and want to expand with GHA)
   > - **Nothing** — just wanted to check
 
-  Dispatch to the matching runbook section based on which backend the repo uses. For "Add a repo", ask which backend to use (or infer from context — e.g., if the user only has one backend set up, use that). Never silently re-create triggers that already exist.
+  Dispatch to the matching runbook section based on which backend the repo uses. For "Add a repo", ask which backend to use (or infer from context — e.g., if the user only has one backend set up, use that). Never silently re-create triggers that already exist. For "Delete everything and start over", delete all triggers and workflow files, then restart from **Step 0b** (choose backend) so the user can pick fresh.
 
 **Step 0b — Choose backend.**
 
