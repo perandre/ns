@@ -51,31 +51,43 @@ Default to **Setup** unless the user clearly asks for something else (test once,
 
 ## Setup runbook
 
-**Step 0 — Check for existing Night Shift triggers first.**
+**Step 0 — Check for existing Night Shift setup (both backends).**
 
-Before welcoming the user, list their scheduled triggers via the `RemoteTrigger` tool (`action: "list"`) and filter to names starting with `night-shift-`. Then:
+Before welcoming the user, check both backends:
 
-- **If none exist** → proceed to Step 0b (choose backend).
-- **If some or all three exist** → don't run fresh setup. Instead, show the user what's already in place and ask what they want to do:
+1. **Schedule:** List scheduled triggers via the `RemoteTrigger` tool (`action: "list"`) and filter to names starting with `night-shift-`.
+2. **GitHub Actions:** Search for `.github/workflows/night-shift.yml` in sibling directories and common locations (`~/Sites`, `~/Projects`, `~/Code`, `~/repos`, `~/dev`). A repo has Night Shift via GHA if this file exists and references `perandre/night-shift`.
 
-  > Night Shift is already set up on your account:
+Then:
+
+- **If nothing found (no triggers, no workflow files)** → proceed to Step 0b (choose backend).
+- **If existing setup found** → don't run fresh setup. Show what's already in place across both backends and ask what they want to do:
+
+  > Night Shift is already set up:
   >
+  > **Schedule (remote triggers):** *(if any triggers found)*
   > | Job | Schedule | Repos |
   > |---|---|---|
   > | build | `<local time>` | `<repo list>` |
   > | maintain | `<local time>` | `<repo list>` |
   > | audit | `<local time>` | `<repo list>` |
   >
+  > **GitHub Actions:** *(if any workflow files found)*
+  > | Repo | Schedule | Tasks |
+  > |---|---|---|
+  > | `owner/repo-a` | `<cron>` | `<N>` tasks |
+  >
   > What would you like to do?
-  > - **Add a repo** to all jobs (runs the task picker for the new repo)
-  > - **Remove a repo** from all jobs
+  > - **Add a repo** (runs the task picker for the new repo)
+  > - **Remove a repo**
   > - **Change tasks for a repo** (re-run the picker for one existing repo)
-  > - **Change the schedule** of one or more jobs
-  > - **Pause** a job (disable it)
+  > - **Change the schedule**
+  > - **Pause** a job / workflow
   > - **Delete everything** and start over
+  > - **Add GitHub Actions** to more repos (if using Schedule and want to expand with GHA)
   > - **Nothing** — just wanted to check
 
-  Dispatch to the matching runbook section (see **Add a repo**, **Remove a repo**, **Change tasks for a repo** below). Never silently re-create triggers that already exist.
+  Dispatch to the matching runbook section based on which backend the repo uses. For "Add a repo", ask which backend to use (or infer from context — e.g., if the user only has one backend set up, use that). Never silently re-create triggers that already exist.
 
 **Step 0b — Choose backend.**
 
@@ -326,7 +338,25 @@ If merging produces an empty `repos:` map for a trigger, **delete that trigger**
 
 ## Status
 
-List the user's current scheduled triggers via the `RemoteTrigger` tool with `action: "list"`. Filter to ones with names starting with `night-shift-`. Show name, cron (converted to local time), and the repos in `sources[]`.
+Check both backends and show a unified view:
+
+**Schedule backend:** List the user's current scheduled triggers via the `RemoteTrigger` tool (`action: "list"`). Filter to names starting with `night-shift-`. Show name, cron (converted to local time), and the repos in `sources[]`.
+
+**GitHub Actions backend:** Search for `.github/workflows/night-shift.yml` in sibling directories of the current working directory and common locations (`~/Sites`, `~/Projects`, `~/Code`, `~/repos`, `~/dev`). For each found, parse the `tasks:` value. Show repo path, cron schedule, and task count.
+
+Present both in a single summary:
+
+> **Night Shift status:**
+>
+> **Schedule (remote triggers):**
+> | Job | Schedule | Repos |
+> |---|---|---|
+> | build | ... | ... |
+>
+> **GitHub Actions (workflow files):**
+> | Repo | Schedule | Tasks |
+> |---|---|---|
+> | owner/repo-a | 01:00 UTC weeknights | 8 tasks |
 
 ---
 
