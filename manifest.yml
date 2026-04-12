@@ -75,7 +75,7 @@ tasks:
     title: Update changelog
     description: Adds entries for any user-facing changes since the last release.
     bundle: docs
-    mode: direct-to-main
+    mode: pull-request
     order: 1
     scope: app
 
@@ -83,7 +83,7 @@ tasks:
     title: Update documentation
     description: Discovers and refreshes all project docs — user guides, READMEs, technical docs, concept docs, model descriptions, and more.
     bundle: docs
-    mode: direct-to-main
+    mode: pull-request
     order: 2
     scope: app
 
@@ -91,7 +91,7 @@ tasks:
     title: Document decisions
     description: Captures architectural decisions visible in code and git history as ADRs.
     bundle: docs
-    mode: direct-to-main
+    mode: pull-request
     order: 3
     scope: repo
 
@@ -99,7 +99,7 @@ tasks:
     title: Suggest improvements
     description: Analyzes the codebase for improvement ideas to pitch to stakeholders.
     bundle: docs
-    mode: direct-to-main
+    mode: pull-request
     order: 4
     scope: repo
 
@@ -107,7 +107,7 @@ tasks:
     title: Weekly metrics digest
     description: Summarizes the past week's Night Shift activity into a digest with key metrics.
     bundle: docs
-    mode: direct-to-main
+    mode: pull-request
     order: 5
     scope: repo
 

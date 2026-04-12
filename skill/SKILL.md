@@ -407,7 +407,7 @@ For each repo in `selection`:
 
 2. Build the task list string: join `selection[repo]` with commas.
 
-3. Generate the caller workflow file from the template at `https://raw.githubusercontent.com/perandre/night-shift/main/github-actions/caller-template.yml`. Fetch it once and cache. Replace the `tasks:` value with the repo's selected tasks. Replace the `cron:` value if the user customised the schedule.
+3. Generate the caller workflow file from the template at `https://raw.githubusercontent.com/perandre/night-shift/main/github-actions/caller-template.yml`. Fetch it once and cache. Replace the `tasks:` value with the repo's selected tasks. Replace the `cron:` value if the user customised the schedule. Replace `COMMIT_SHA` in the `uses:` line with the latest commit SHA from the night-shift repo (run `git ls-remote https://github.com/perandre/night-shift HEAD` to get it). This pins the workflow to a known-good version for supply-chain safety.
 
 4. Write the file to `<repo-path>/.github/workflows/night-shift.yml`. Create the `.github/workflows/` directory if it doesn't exist.
 

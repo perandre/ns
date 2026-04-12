@@ -24,4 +24,4 @@ For each task in order:
 
 ## Mode
 
-Per the manifest, this bundle is **direct-to-main** mode. Tasks commit straight to the default branch.
+Per the manifest, this bundle is **pull-request** mode. Each task creates a feature branch and opens a PR for review.

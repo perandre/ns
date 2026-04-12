@@ -24,7 +24,9 @@ on:
 
 jobs:
   night-shift:
-    uses: perandre/night-shift/.github/workflows/night-shift.yml@main
+    # Pin to a specific commit for supply-chain safety.
+    # Update the SHA when you want to pick up new Night Shift features.
+    uses: perandre/night-shift/.github/workflows/night-shift.yml@COMMIT_SHA
     with:
       tasks: 'build-planned-features,update-changelog,update-user-guide,document-decisions,suggest-improvements,add-tests,improve-accessibility,translate-ui,find-security-issues,find-bugs,improve-seo,improve-performance'
     secrets:

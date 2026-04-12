@@ -264,26 +264,51 @@ jobs:
           REPO="${{ github.repository }}"
           REPO_NAME="${REPO#*/}"
           DATE="$(date -u +%Y-%m-%d)"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
           OUTPUT=""
           if [ -f /tmp/nightshift-output.txt ]; then
             OUTPUT=$(cat /tmp/nightshift-output.txt)
           fi
 
-          # Extract the summary table from output (lines starting with |)
-          SUMMARY_TABLE=$(echo "${OUTPUT}" | grep '^|' || echo "No summary table found.")
+          # Count PRs and commits from output
+          PR_COUNT=$(echo "${OUTPUT}" | grep -coE 'https://github\.com/[^ )"|]*pull/[0-9]+' || echo "0")
+          PR_URLS=$(echo "${OUTPUT}" | grep -oE 'https://github\.com/[^ )"|]*pull/[0-9]+' | head -5 || true)
+
+          # Build a human-friendly summary line
+          if [ "${PR_COUNT}" -gt 0 ]; then
+            SUMMARY=":white_check_mark: *${PR_COUNT} PRs opened*"
+            # Add PR links as bullet points
+            PR_LIST=""
+            while IFS= read -r url; do
+              [ -n "$url" ] && PR_LIST="${PR_LIST}\n  - <${url}>"
+            done <<< "${PR_URLS}"
+            SUMMARY="${SUMMARY}${PR_LIST}"
+          else
+            SUMMARY=":white_check_mark: Completed — no changes needed"
+          fi
 
           PAYLOAD=$(jq -n \
-            --arg text "*Night Shift — ${REPO_NAME}*  ·  ${DATE}" \
-            --arg table "${SUMMARY_TABLE}" \
+            --arg repo "*Night Shift — ${REPO_NAME}*  ·  ${DATE}" \
+            --arg summary "${SUMMARY}" \
+            --arg run_url "${RUN_URL}" \
             '{
               blocks: [
                 {
                   type: "section",
                   text: {
                     type: "mrkdwn",
-                    text: ($text + "\n\n```\n" + $table + "\n```")
+                    text: ($repo + "\n\n" + $summary)
                   }
+                },
+                {
+                  type: "context",
+                  elements: [
+                    {
+                      type: "mrkdwn",
+                      text: ("<" + $run_url + "|View full run>")
+                    }
+                  ]
                 }
               ]
             }')
@@ -303,15 +328,25 @@ jobs:
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
           PAYLOAD=$(jq -n \
-            --arg text "*Night Shift — ${REPO_NAME}*  ·  ${DATE}\n\n:x: *Run failed.* <${RUN_URL}|View logs>" \
+            --arg repo "*Night Shift — ${REPO_NAME}*  ·  ${DATE}" \
+            --arg run_url "${RUN_URL}" \
             '{
               blocks: [
                 {
                   type: "section",
                   text: {
                     type: "mrkdwn",
-                    text: $text
+                    text: ($repo + "\n\n:x: *Run failed*")
                   }
+                },
+                {
+                  type: "context",
+                  elements: [
+                    {
+                      type: "mrkdwn",
+                      text: ("<" + $run_url + "|View logs>")
+                    }
+                  ]
                 }
               ]
             }')
