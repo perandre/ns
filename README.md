@@ -12,7 +12,7 @@ Night Shift installs as a Claude Code skill — a local file in `~/.claude/skill
 
 ```bash
 mkdir -p ~/.claude/skills/night-shift && \
-  curl -fsSL https://raw.githubusercontent.com/perandre/night-shift/main/skill/SKILL.md \
+  curl -fsSL https://raw.githubusercontent.com/frontkom/night-shift/main/skill/SKILL.md \
   -o ~/.claude/skills/night-shift/SKILL.md
 ```
 
@@ -98,7 +98,7 @@ Add a `## Night Shift Config` section to the project's `CLAUDE.md`. All fields a
 
 ## Testing
 
-To test tasks against a sandbox repo before running them on real projects, install the separate [Night Shift Test](https://github.com/perandre/night-shift-test) skill.
+To test tasks against a sandbox repo before running them on real projects, install the separate [Night Shift Test](https://github.com/frontkom/night-shift-test) skill.
 
 ## How to add a project, add a task, or run something now
 

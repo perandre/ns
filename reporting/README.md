@@ -80,7 +80,7 @@ Then pass it in your caller workflow:
 ```yaml
 jobs:
   nightly:
-    uses: perandre/night-shift/.github/workflows/night-shift.yml@main
+    uses: frontkom/night-shift/.github/workflows/night-shift.yml@main
     with:
       tasks: "build-planned-features,update-changelog"
     secrets:

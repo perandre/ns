@@ -40,7 +40,7 @@ For each discovered target repo, in directory-name order:
    If PLAN_FILE is "—", return `silent | PR: — | no plan files` and stop.
 
    Otherwise, fetch
-   https://raw.githubusercontent.com/perandre/night-shift/main/tasks/build-planned-features.md
+   https://raw.githubusercontent.com/frontkom/night-shift/main/tasks/build-planned-features.md
    and execute it against THIS ONE PLAN FILE ONLY. Do not scan for other plans; the
    dispatcher has already fanned out one subagent per plan. Implement the next
    pending phase of PLAN_FILE and open one PR for it.
@@ -54,7 +54,7 @@ For each discovered target repo, in directory-name order:
 
    CLAUDE.md is optional. Honor `## Night Shift Config` if present, otherwise apply
    the defaults from
-   https://raw.githubusercontent.com/perandre/night-shift/main/bundles/_multi-runner.md.
+   https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/_multi-runner.md.
 
    At the end of your run, append ONE LINE to docs/NIGHTSHIFT-HISTORY.md (create the
    file if missing) under the `## Runs` heading at the top of the runs list. Format:
@@ -76,13 +76,13 @@ After all plan-file work-items for a repo are dispatched, check if `work-on-issu
 ```
 Your working directory is {REPO_PATH}. cd into it now.
 
-Fetch https://raw.githubusercontent.com/perandre/night-shift/main/tasks/work-on-issues.md
+Fetch https://raw.githubusercontent.com/frontkom/night-shift/main/tasks/work-on-issues.md
 and execute it against this repository. Process up to 3 open GitHub Issues
 labeled "night-shift", opening one PR per issue.
 
 CLAUDE.md is optional. Honor `## Night Shift Config` if present, otherwise apply
 the defaults from
-https://raw.githubusercontent.com/perandre/night-shift/main/bundles/_multi-runner.md.
+https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/_multi-runner.md.
 
 At the end of your run, append ONE LINE to docs/NIGHTSHIFT-HISTORY.md (create the
 file if missing) under the `## Runs` heading at the top of the runs list. Format:

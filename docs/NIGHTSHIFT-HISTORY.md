@@ -1,6 +1,6 @@
 # Night Shift history
 
-This file is maintained automatically by Night Shift. Each line records one bundle run. See https://github.com/perandre/night-shift for what each bundle does.
+This file is maintained automatically by Night Shift. Each line records one bundle run. See https://github.com/frontkom/night-shift for what each bundle does.
 
 ## Runs
 

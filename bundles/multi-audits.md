@@ -6,7 +6,7 @@ You are running the Night Shift **Audits** bundle across **all target repositori
 
 Before discovering repos, scan **your own invocation prompt** for a `<night-shift-config>…</night-shift-config>` block and parse the `repos:` map out of it. See `bundles/_multi-runner.md` → **Per-repo task allowlist** for the exact contract. If absent or malformed → no allowlist (all tasks allowed), log `allowlist: none (running all tasks)` in the summary.
 
-Fetch `https://raw.githubusercontent.com/perandre/night-shift/main/manifest.yml` once and collect the set of task ids where `bundle: audits` — this is the authoritative bundle task set. Do **not** hardcode a list here; new audit tasks added to the manifest must flow through automatically. For each repo compute `audits_allowed = allowlist[repo] ∩ <manifest audits tasks>`. If empty, record `not-selected` for that repo and dispatch nothing.
+Fetch `https://raw.githubusercontent.com/frontkom/night-shift/main/manifest.yml` once and collect the set of task ids where `bundle: audits` — this is the authoritative bundle task set. Do **not** hardcode a list here; new audit tasks added to the manifest must flow through automatically. For each repo compute `audits_allowed = allowlist[repo] ∩ <manifest audits tasks>`. If empty, record `not-selected` for that repo and dispatch nothing.
 
 ## Discover repos
 List sibling directories at the top of your working tree. For each candidate, confirm via `git rev-parse --show-toplevel`.
@@ -32,7 +32,7 @@ For each discovered target repo, in directory-name order:
    Allowed tasks: {AUDITS_ALLOWED}   # YAML list of audit task ids for this repo
    Run repo-wide secret scan: {RUN_REPO_SECRET_SCAN}
 
-   Fetch https://raw.githubusercontent.com/perandre/night-shift/main/bundles/audits.md
+   Fetch https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/audits.md
    and execute it against this repository, scoped to {APP_PATH} when it is not "—".
    Pass `allowed_tasks: AUDITS_ALLOWED` to the inner bundle so each audit task
    self-filters (tasks not in the list exit silently).
@@ -50,7 +50,7 @@ For each discovered target repo, in directory-name order:
 
    CLAUDE.md is optional. Honor `## Night Shift Config` if present, otherwise apply
    the defaults from
-   https://raw.githubusercontent.com/perandre/night-shift/main/bundles/_multi-runner.md.
+   https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/_multi-runner.md.
 
    At the end of your run, append ONE LINE to docs/NIGHTSHIFT-HISTORY.md (create the
    file if missing) under the `## Runs` heading at the top of the runs list. Format:

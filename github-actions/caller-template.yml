@@ -13,7 +13,7 @@
 # To pause Night Shift: disable this workflow in the Actions tab,
 # or add a .nightshift-skip file to the repo root.
 #
-# Docs: https://github.com/perandre/night-shift
+# Docs: https://github.com/frontkom/night-shift
 
 name: Night Shift
 
@@ -26,7 +26,7 @@ jobs:
   night-shift:
     # Pin to a specific commit for supply-chain safety.
     # Update the SHA when you want to pick up new Night Shift features.
-    uses: perandre/night-shift/.github/workflows/night-shift.yml@COMMIT_SHA
+    uses: frontkom/night-shift/.github/workflows/night-shift.yml@COMMIT_SHA
     with:
       tasks: 'build-planned-features,work-on-issues,update-changelog,update-user-guide,document-decisions,suggest-improvements,weekly-digest,add-tests,improve-accessibility,translate-ui,find-security-issues,find-bugs,improve-seo,improve-performance'
     secrets:

@@ -12,7 +12,7 @@ Docs tasks edit markdown only and never affect the test suite. Code-fixes tasks 
 
 Before discovering repos, scan **your own invocation prompt** for a `<night-shift-config>…</night-shift-config>` block and parse the `repos:` map out of it. See `bundles/_multi-runner.md` → **Per-repo task allowlist** for the exact contract. If absent or malformed → no allowlist (all tasks allowed), log `allowlist: none (running all tasks)` in the summary.
 
-This wrapper runs **two** bundles. Fetch `https://raw.githubusercontent.com/perandre/night-shift/main/manifest.yml` once and collect task ids per bundle dynamically — do **not** hardcode lists here so new tasks flow through automatically. For each repo compute:
+This wrapper runs **two** bundles. Fetch `https://raw.githubusercontent.com/frontkom/night-shift/main/manifest.yml` once and collect task ids per bundle dynamically — do **not** hardcode lists here so new tasks flow through automatically. For each repo compute:
 
 - `docs_allowed = allowlist[repo] ∩ <manifest tasks where bundle=docs>`
 - `fixes_allowed = allowlist[repo] ∩ <manifest tasks where bundle=code-fixes>`
@@ -50,7 +50,7 @@ For each discovered target repo, in directory-name order:
 
    Step 1 — DOCS:
    If DOCS_ALLOWED is empty, skip this step with outcome `silent` (note: not-selected).
-   Otherwise, fetch https://raw.githubusercontent.com/perandre/night-shift/main/bundles/docs.md
+   Otherwise, fetch https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/docs.md
    and execute it against this repository, scoped to {APP_PATH} when it is not "—".
    Pass `allowed_tasks: DOCS_ALLOWED` to the inner bundle so each task self-filters.
    When RUN_REPO_SCOPED_TASKS is false, also skip the `document-decisions`,
@@ -59,14 +59,14 @@ For each discovered target repo, in directory-name order:
 
    Step 2 — CODE FIXES (always run, regardless of docs outcome):
    If FIXES_ALLOWED is empty, skip this step with outcome `silent` (note: not-selected).
-   Otherwise, fetch https://raw.githubusercontent.com/perandre/night-shift/main/bundles/code-fixes.md
+   Otherwise, fetch https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/code-fixes.md
    and execute it against this repository, scoped to {APP_PATH} when it is not "—".
    Pass `allowed_tasks: FIXES_ALLOWED` to the inner bundle so each task self-filters.
    All code-fixes tasks are scope: app. Capture the outcome as the code-fixes result.
 
    CLAUDE.md is optional. Honor `## Night Shift Config` if present, otherwise apply
    the defaults from
-   https://raw.githubusercontent.com/perandre/night-shift/main/bundles/_multi-runner.md.
+   https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/_multi-runner.md.
 
    At the end of your run, append TWO LINES to docs/NIGHTSHIFT-HISTORY.md (create the
    file if missing) under the `## Runs` heading at the top of the runs list:

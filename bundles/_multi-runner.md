@@ -115,7 +115,7 @@ When a repo declares `apps:`, the summary table prints **one row per (repo, app_
 
 Each subagent appends one line per bundle run to `docs/NIGHTSHIFT-HISTORY.md` in the target repo (creating the file if it doesn't exist). This file lives in the target repo itself — anyone with access to that repo can see what Night Shift has been doing. Access control follows the repo's own permissions.
 
-**Do not** write Night Shift logs to any other repo. In particular, do **not** write to the public `perandre/night-shift` repo — doing so would leak private project information (names, activity, commit counts) to a public location. Each target project is the authoritative log for its own Night Shift activity.
+**Do not** write Night Shift logs to any other repo. In particular, do **not** write to the public `frontkom/night-shift` repo — doing so would leak private project information (names, activity, commit counts) to a public location. Each target project is the authoritative log for its own Night Shift activity.
 
 Format (newest at the top, under the `## Runs` heading):
 
@@ -123,7 +123,7 @@ Format (newest at the top, under the `## Runs` heading):
 # Night Shift history
 
 This file is maintained automatically by Night Shift. Each line records one
-bundle run. See https://github.com/perandre/night-shift for what each bundle does.
+bundle run. See https://github.com/frontkom/night-shift for what each bundle does.
 
 ## Runs
 

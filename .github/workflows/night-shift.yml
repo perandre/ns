@@ -4,7 +4,7 @@
 # appropriate bundle prompts against the calling repo.
 #
 # Usage: see github-actions/caller-template.yml for the minimal caller file.
-# Docs:  https://github.com/perandre/night-shift
+# Docs:  https://github.com/frontkom/night-shift
 
 name: Night Shift
 
@@ -78,19 +78,19 @@ jobs:
           ## Instructions
 
           Fetch the Night Shift manifest once:
-          https://raw.githubusercontent.com/perandre/night-shift/main/manifest.yml
+          https://raw.githubusercontent.com/frontkom/night-shift/main/manifest.yml
 
           Using the manifest, determine which bundles contain at least one of your
           allowed tasks. Then run each applicable bundle **in this order**:
 
           1. **plans** — fetch and execute
-             https://raw.githubusercontent.com/perandre/night-shift/main/bundles/plans.md
+             https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/plans.md
           2. **docs** — fetch and execute
-             https://raw.githubusercontent.com/perandre/night-shift/main/bundles/docs.md
+             https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/docs.md
           3. **code-fixes** — fetch and execute
-             https://raw.githubusercontent.com/perandre/night-shift/main/bundles/code-fixes.md
+             https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/code-fixes.md
           4. **audits** — fetch and execute
-             https://raw.githubusercontent.com/perandre/night-shift/main/bundles/audits.md
+             https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/audits.md
 
           For each bundle:
           - Intersect the bundle's tasks (from the manifest) with your allowed tasks.
@@ -104,7 +104,7 @@ jobs:
           After all bundles complete, append history lines to
           docs/NIGHTSHIFT-HISTORY.md (create the file + directory if needed).
           Follow the format documented in the multi-runner protocol:
-          https://raw.githubusercontent.com/perandre/night-shift/main/bundles/_multi-runner.md
+          https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/_multi-runner.md
 
           Honor CLAUDE.md's Night Shift Config section if present.
           If absent, use defaults from the multi-runner protocol.

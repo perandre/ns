@@ -7,7 +7,7 @@ Read `CLAUDE.md` for the **Night Shift Config** section if present. If absent, u
 
 ## Resolve tasks from manifest
 
-Fetch and parse https://raw.githubusercontent.com/perandre/night-shift/main/manifest.yml.
+Fetch and parse https://raw.githubusercontent.com/frontkom/night-shift/main/manifest.yml.
 
 - Read `bundles.plans` for this bundle's settings (`parallelism`, `stop_on_failure`, `mode`).
 - Read `tasks[]` and select all entries where `bundle: plans`. Sort by `order` ascending. This is the canonical task list — **do not** rely on a hardcoded list anywhere else.
@@ -17,7 +17,7 @@ Fetch and parse https://raw.githubusercontent.com/perandre/night-shift/main/mani
 
 For each task in order:
 
-1. Fetch `https://raw.githubusercontent.com/perandre/night-shift/main/tasks/<task-id>.md` (where `<task-id>` is the task's `id` field from the manifest).
+1. Fetch `https://raw.githubusercontent.com/frontkom/night-shift/main/tasks/<task-id>.md` (where `<task-id>` is the task's `id` field from the manifest).
 2. Execute the task exactly as written, including its commit and PR steps.
 3. Apply the bundle's rules from the manifest:
    - `parallelism: independent` and `stop_on_failure: false` — one task's exit must not affect the others.

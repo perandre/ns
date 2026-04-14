@@ -7,7 +7,7 @@ Read `CLAUDE.md` for the **Night Shift Config** section if present. If absent, u
 
 ## Resolve tasks from manifest
 
-Fetch and parse https://raw.githubusercontent.com/perandre/night-shift/main/manifest.yml.
+Fetch and parse https://raw.githubusercontent.com/frontkom/night-shift/main/manifest.yml.
 
 - Read `bundles.audits` for this bundle's settings.
 - Read `tasks[]` and select all entries where `bundle: audits`. Sort by `order` ascending. This is the canonical task list — **do not** rely on a hardcoded list anywhere else.
@@ -18,7 +18,7 @@ Fetch and parse https://raw.githubusercontent.com/perandre/night-shift/main/mani
 For each task in order:
 
 1. Before starting each task: `git checkout <default-branch> && git pull` and confirm the working tree is clean. Each audit task creates its own branch + PR and must start from a clean base.
-2. Fetch `https://raw.githubusercontent.com/perandre/night-shift/main/tasks/<task-id>.md`.
+2. Fetch `https://raw.githubusercontent.com/frontkom/night-shift/main/tasks/<task-id>.md`.
 3. Execute the task exactly as written.
 4. Apply the bundle's rules from the manifest. Audits is `parallelism: independent`, `stop_on_failure: false` — one task failing or exiting must **not** stop the bundle.
 5. If a task says "exit silently" (no real issues found, or a similar PR already open), continue with the next.

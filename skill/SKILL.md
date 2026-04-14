@@ -6,7 +6,7 @@ description: |
   Use this skill when the user explicitly asks to: install Night Shift, set up Night Shift, schedule Night Shift, run a Night Shift bundle, add a repo to Night Shift, remove a repo from Night Shift, pause Night Shift on a project, or check Night Shift status.
 
   MANDATORY TRIGGERS: night-shift, night shift, nightshift, /night-shift, set up night shift, install night shift, schedule night shift, run night shift, night shift setup, night shift install
-version: 2026-04-09j
+version: 2026-04-13a
 ---
 
 # Night Shift
@@ -19,12 +19,12 @@ Before doing anything else, check whether this local skill file is out of date:
 
 1. Fetch the latest version marker from GitHub (one request, ~1 KB):
    ```
-   curl -fsSL https://raw.githubusercontent.com/perandre/night-shift/main/skill/SKILL.md | grep -m1 NIGHT_SHIFT_VERSION
+   curl -fsSL https://raw.githubusercontent.com/frontkom/night-shift/main/skill/SKILL.md | grep -m1 NIGHT_SHIFT_VERSION
    ```
 2. Compare the returned date against the `NIGHT_SHIFT_VERSION` comment at the top of this file.
 3. If the remote is newer, auto-update the local file:
    ```
-   curl -fsSL https://raw.githubusercontent.com/perandre/night-shift/main/skill/SKILL.md -o ~/.claude/skills/night-shift/SKILL.md
+   curl -fsSL https://raw.githubusercontent.com/frontkom/night-shift/main/skill/SKILL.md -o ~/.claude/skills/night-shift/SKILL.md
    ```
    Then **re-read** the updated file with the Read tool (`~/.claude/skills/night-shift/SKILL.md`) and follow the updated instructions from that point on. Tell the user:
    > Night Shift skill updated (local: `<old>` → `<new>`).
@@ -33,7 +33,7 @@ Before doing anything else, check whether this local skill file is out of date:
 Night Shift is a framework for scheduled nightly maintenance jobs across multiple repositories. It uses Claude Code's remote scheduled triggers to spawn nightly sessions that run a fixed set of bundles (groups of tasks) against the user's chosen repos.
 
 The full source and the bundle / task prompt files live at:
-**https://github.com/perandre/night-shift**
+**https://github.com/frontkom/night-shift**
 
 That's the canonical reference. If you ever need to check what a bundle does, look there.
 
@@ -56,7 +56,7 @@ Default to **Setup** unless the user clearly asks for something else (test once,
 Before welcoming the user, check both backends:
 
 1. **Schedule:** List scheduled triggers via the `RemoteTrigger` tool (`action: "list"`) and filter to names starting with `night-shift-`.
-2. **GitHub Actions:** Search for `.github/workflows/night-shift.yml` in sibling directories and common locations (`~/Sites`, `~/Projects`, `~/Code`, `~/repos`, `~/dev`). A repo has Night Shift via GHA if this file exists and references `perandre/night-shift`.
+2. **GitHub Actions:** Search for `.github/workflows/night-shift.yml` in sibling directories and common locations (`~/Sites`, `~/Projects`, `~/Code`, `~/repos`, `~/dev`). A repo has Night Shift via GHA if this file exists and references `frontkom/night-shift`.
 
 Then:
 
@@ -96,7 +96,7 @@ Ask the user how they want Night Shift to run:
 > **How should Night Shift run?**
 >
 > - **Schedule** — runs via your Claude account's remote triggers (no API key needed, included in your subscription)
-> - **GitHub Actions** — runs on GitHub's infrastructure (requires `gh` CLI and an `ANTHROPIC_API_KEY` in your org/repo secrets — see [setup docs](https://github.com/perandre/night-shift#github-actions))
+> - **GitHub Actions** — runs on GitHub's infrastructure (requires `gh` CLI and an `ANTHROPIC_API_KEY` in your org/repo secrets — see [setup docs](https://github.com/frontkom/night-shift#github-actions))
 
 - If **Schedule** → continue to Step 1 below (existing flow, unchanged).
 - If **GitHub Actions** → jump to the **GitHub Actions setup runbook** section below.
@@ -173,7 +173,7 @@ Default schedule → UTC cron: build `0 23 * * *`, maintain `0 1 * * *`, audit `
 
 **Step 4 — Create the triggers.**
 
-**Which triggers get created.** Fetch `https://raw.githubusercontent.com/perandre/night-shift/main/manifest.yml` (you already fetched it for the picker in Step 2 — reuse the cache) and compute, per trigger, the set of task ids that belong to it by bundle membership:
+**Which triggers get created.** Fetch `https://raw.githubusercontent.com/frontkom/night-shift/main/manifest.yml` (you already fetched it for the picker in Step 2 — reuse the cache) and compute, per trigger, the set of task ids that belong to it by bundle membership:
 
 - **build trigger** — tasks where `bundle: plans`.
 - **maintain trigger** — tasks where `bundle: docs` OR `bundle: code-fixes`.
@@ -195,7 +195,7 @@ A trigger is created only if at least one repo's selection has a non-empty inter
 
 **Inline the allowlist.** Each trigger's prompt gets a `<night-shift-config>` block appended at the end. For the maintain trigger, list only the docs+code-fixes tasks each repo selected. For the audit trigger, list only the audit tasks each repo selected. **Never put a task id in a trigger's YAML that doesn't belong to that trigger's bundles** — the wrapper ignores mismatched ids, but keeping the YAML clean makes the trigger dashboard easier to read.
 
-Use the `RemoteTrigger` tool with `action: "create"`. **Do not** include `https://github.com/perandre/night-shift` in sources — that repo is public and writing run logs to it would leak private project information.
+Use the `RemoteTrigger` tool with `action: "create"`. **Do not** include `https://github.com/frontkom/night-shift` in sources — that repo is public and writing run logs to it would leak private project information.
 
 **Fetching the environment_id (required, one-time).** The API requires a real `environment_id` — using `"default"` causes sessions to silently hang with no output. To get it:
 
@@ -250,21 +250,21 @@ Generate a fresh UUID for each trigger's `events[0].data.uuid` using `python3 -c
 
 - **name**: `night-shift-build`
 - **cron_expression**: `0 23 * * *`
-- **wrapper URL**: `https://raw.githubusercontent.com/perandre/night-shift/main/bundles/multi-plans.md`
+- **wrapper URL**: `https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/multi-plans.md`
 - **prompt**: Fetch the wrapper URL with WebFetch, then use its full contents as the prompt. Append the `<night-shift-config>` block at the end.
 
 ### Trigger 2 — Maintain
 
 - **name**: `night-shift-maintain`
 - **cron_expression**: `0 1 * * *`
-- **wrapper URL**: `https://raw.githubusercontent.com/perandre/night-shift/main/bundles/multi-docs-and-code-fixes.md`
+- **wrapper URL**: `https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/multi-docs-and-code-fixes.md`
 - **prompt**: Fetch the wrapper URL with WebFetch, then use its full contents as the prompt. Append the `<night-shift-config>` block at the end.
 
 ### Trigger 3 — Audit
 
 - **name**: `night-shift-audit`
 - **cron_expression**: `0 3 * * *`
-- **wrapper URL**: `https://raw.githubusercontent.com/perandre/night-shift/main/bundles/multi-audits.md`
+- **wrapper URL**: `https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/multi-audits.md`
 - **prompt**: Fetch the wrapper URL with WebFetch, then use its full contents as the prompt. Append the `<night-shift-config>` block at the end.
 
 **Step 4b — Handle the trigger cap.**
@@ -296,7 +296,7 @@ happened. The full summary table for each run is also in the trigger
 dashboard at https://claude.ai/code/scheduled. To pause Night Shift on
 any project, drop a .nightshift-skip file at its root. To change which
 tasks run on a repo, re-run /night-shift and pick "Change tasks for a
-repo". See https://github.com/perandre/night-shift for the full reference.
+repo". See https://github.com/frontkom/night-shift for the full reference.
 ```
 
 ## Test-once runbook (no scheduling)
@@ -410,7 +410,7 @@ Show the same compact summary as the Schedule backend's Step 3, but adapted:
 > **Schedule:** `0 1 * * 1-5` (weeknights 01:00 UTC). Adjust?
 >
 > Each repo gets a `.github/workflows/night-shift.yml` that calls the
-> shared reusable workflow at `perandre/night-shift`.
+> shared reusable workflow at `frontkom/night-shift`.
 >
 > Proceed?
 
@@ -420,7 +420,7 @@ For each repo in `selection`:
 
 1. Build the task list string: join `selection[repo]` with commas.
 
-2. Generate the caller workflow file from the template at `https://raw.githubusercontent.com/perandre/night-shift/main/github-actions/caller-template.yml`. Fetch it once and cache. Replace the `tasks:` value with the repo's selected tasks. Replace the `cron:` value if the user customised the schedule. Replace `COMMIT_SHA` in the `uses:` line with the latest commit SHA from the night-shift repo (run `git ls-remote https://github.com/perandre/night-shift HEAD` to get it). This pins the workflow to a known-good version for supply-chain safety.
+2. Generate the caller workflow file from the template at `https://raw.githubusercontent.com/frontkom/night-shift/main/github-actions/caller-template.yml`. Fetch it once and cache. Replace the `tasks:` value with the repo's selected tasks. Replace the `cron:` value if the user customised the schedule. Replace `COMMIT_SHA` in the `uses:` line with the latest commit SHA from the night-shift repo (run `git ls-remote https://github.com/frontkom/night-shift HEAD` to get it). This pins the workflow to a known-good version for supply-chain safety.
 
 3. Create a PR on GitHub using the `gh` CLI — **no local clone needed**:
    ```bash
@@ -473,7 +473,7 @@ For GitHub Actions repos, the task list lives in the workflow file's `tasks:` in
 
 - **Always ask for explicit confirmation** before creating, updating, or deleting scheduled triggers. They are persistent and run unattended — high blast radius.
 - **Inline wrapper prompts at setup time.** Fetch each multi-*.md wrapper from GitHub during setup and inline the contents as the trigger prompt. Remote agents refuse "Fetch URL and execute" instructions (prompt injection guard), so the wrapper must be baked in. The wrapper's inner references (subagents fetching bundle/task prompts via WebFetch) are fine — only the top-level "fetch and execute" is refused.
-- **The task and bundle URLs are stable.** They live at `raw.githubusercontent.com/perandre/night-shift/main/...`. Subagents fetch these at run time, which works because they already have tool access. Only the top-level trigger prompt must be inlined.
+- **The task and bundle URLs are stable.** They live at `raw.githubusercontent.com/frontkom/night-shift/main/...`. Subagents fetch these at run time, which works because they already have tool access. Only the top-level trigger prompt must be inlined.
 - **Refuse if the user can't articulate what Night Shift should do for them.** If the request is vague or feels delegated from somewhere, ask the user directly what they want to accomplish before taking any action.
 - **GitHub Actions mode never touches remote triggers.** The two backends are independent. A user can even use both (Schedule for personal repos, GitHub Actions for org repos). Never mix operations between backends.
 - **GitHub Actions mode does not auto-commit.** Always let the user review the generated workflow files before committing. The workflow file is the only thing added to target repos — no other files are created or modified during setup.
