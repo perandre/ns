@@ -1,17 +1,17 @@
 ---
 name: night-shift
 description: |
-  Set up, run, or manage Night Shift — a framework that schedules nightly maintenance jobs across multiple repositories. Supports two backends: Claude Code remote scheduled triggers (Schedule) or GitHub Actions (reusable workflow). Night Shift runs plans implementation, doc updates + code fixes, and audit PRs across the user's chosen repos.
+  Set up, run, or manage Night Shift — a framework that schedules nightly maintenance jobs across multiple repositories. Supports two backends: Claude Code routines (Schedule) or GitHub Actions (reusable workflow). Night Shift runs plans implementation, doc updates + code fixes, and audit PRs across the user's chosen repos.
 
   Use this skill when the user explicitly asks to: install Night Shift, set up Night Shift, schedule Night Shift, run a Night Shift bundle, add a repo to Night Shift, remove a repo from Night Shift, pause Night Shift on a project, or check Night Shift status.
 
   MANDATORY TRIGGERS: night-shift, night shift, nightshift, /night-shift, set up night shift, install night shift, schedule night shift, run night shift, night shift setup, night shift install
-version: 2026-04-15b
+version: 2026-04-15c
 ---
 
 # Night Shift
 
-<!-- NIGHT_SHIFT_VERSION: 2026-04-15b -->
+<!-- NIGHT_SHIFT_VERSION: 2026-04-15c -->
 
 ## Version check (run this first, every invocation)
 
@@ -30,7 +30,7 @@ Before doing anything else, check whether this local skill file is out of date:
    > Night Shift skill updated (local: `<old>` → `<new>`).
 4. If the curl fails (offline, rate limited), silently skip the check and proceed with the local version.
 
-Night Shift is a framework for scheduled nightly maintenance jobs across multiple repositories. It uses Claude Code's remote scheduled triggers to spawn nightly sessions that run a fixed set of bundles (groups of tasks) against the user's chosen repos.
+Night Shift is a framework for scheduled nightly maintenance jobs across multiple repositories. It uses Claude Code routines (scheduled remote agents) to spawn nightly sessions that run a fixed set of bundles (groups of tasks) against the user's chosen repos.
 
 The full source and the bundle / task prompt files live at:
 **https://github.com/frontkom/night-shift**
@@ -42,7 +42,7 @@ That's the canonical reference. If you ever need to check what a bundle does, lo
 - **Task** — one atomic prompt file that does one thing in one repo (e.g. `add-tests`, `update-changelog`, `find-security-issues`).
 - **Bundle** — a group of related tasks that run together. Four bundles total: `plans`, `docs`, `code-fixes`, `audits`.
 - **Multi-* wrapper** — a meta prompt that auto-discovers all repos cloned into a session and dispatches one Task subagent per repo, then prints a summary table.
-- **Trigger** — a scheduled remote agent (created via the `/schedule` skill or `RemoteTrigger` tool) that fires nightly and runs a multi-* wrapper.
+- **Routine** — a scheduled remote agent (created via the `/schedule` skill or `RemoteTrigger` tool) that fires nightly and runs a multi-* wrapper. (The API tool is still called `RemoteTrigger`; the UI calls them "Routines".)
 - **Manifest** — `manifest.yml` in the night-shift repo, the source of truth for what tasks exist and how they group into bundles.
 
 ## Operations
@@ -55,17 +55,17 @@ Default to **Setup** unless the user clearly asks for something else (test once,
 
 Before welcoming the user, check both backends:
 
-1. **Schedule:** List scheduled triggers via the `RemoteTrigger` tool (`action: "list"`) and filter to names starting with `night-shift-`.
+1. **Schedule:** List routines via the `RemoteTrigger` tool (`action: "list"`) and filter to names starting with `night-shift-`.
 2. **GitHub Actions:** Search for `.github/workflows/night-shift.yml` in sibling directories and common locations (`~/Sites`, `~/Projects`, `~/Code`, `~/repos`, `~/dev`). A repo has Night Shift via GHA if this file exists and references `frontkom/night-shift`.
 
 Then:
 
-- **If nothing found (no triggers, no workflow files)** → proceed to Step 0b (choose backend).
+- **If nothing found (no routines, no workflow files)** → proceed to Step 0b (choose backend).
 - **If existing setup found** → don't run fresh setup. Show what's already in place across both backends and ask what they want to do:
 
   > Night Shift is already set up:
   >
-  > **Schedule (remote triggers):** *(if any triggers found)*
+  > **Schedule (routines):** *(if any routines found)*
   > | Job | Schedule | Repos |
   > |---|---|---|
   > | build | `<local time>` | `<repo list>` |
@@ -87,7 +87,7 @@ Then:
   > - **Add GitHub Actions** to more repos (if using Schedule and want to expand with GHA)
   > - **Nothing** — just wanted to check
 
-  Dispatch to the matching runbook section based on which backend the repo uses. For "Add a repo", ask which backend to use (or infer from context — e.g., if the user only has one backend set up, use that). Never silently re-create triggers that already exist. For "Delete everything and start over", delete all triggers and workflow files, then restart from **Step 0b** (choose backend) so the user can pick fresh.
+  Dispatch to the matching runbook section based on which backend the repo uses. For "Add a repo", ask which backend to use (or infer from context — e.g., if the user only has one backend set up, use that). Never silently re-create routines that already exist. For "Delete everything and start over", delete all routines and workflow files, then restart from **Step 0b** (choose backend) so the user can pick fresh.
 
 **Step 0b — Choose backend.**
 
@@ -95,7 +95,7 @@ Ask the user how they want Night Shift to run:
 
 > **How should Night Shift run?**
 >
-> - **Schedule** — runs via your Claude account's remote triggers (no API key needed, included in your subscription)
+> - **Schedule** — runs via your Claude account's routines (no API key needed, included in your subscription)
 > - **GitHub Actions** — runs on GitHub's infrastructure (requires `gh` CLI and an `ANTHROPIC_API_KEY` in your org/repo secrets — see [setup docs](https://github.com/frontkom/night-shift#github-actions))
 
 - If **Schedule** → continue to Step 1 below (existing flow, unchanged).
@@ -121,7 +121,7 @@ Accept any of: `https://github.com/owner/repo`, `owner/repo`, `git@github.com:ow
 
 **Step 2 — Per-repo task picker.**
 
-For each repo in the list, in the order the user gave them, run the picker loop below. You build up an in-memory map `selection[repo] = [task_id, …]` that gets baked into the trigger prompts in Step 4.
+For each repo in the list, in the order the user gave them, run the picker loop below. You build up an in-memory map `selection[repo] = [task_id, …]` that gets baked into the routine prompts in Step 4.
 
 **Picker defaults:** all tasks recommended per repo.
 
@@ -148,7 +148,7 @@ For each repo in the list, in the order the user gave them, run the picker loop 
    - `find-security-issues` — Find security issues
    - `find-bugs` — Find bugs
 
-   **Meta-option expansion.** `update-docs` is a picker shorthand, not a real task id. When building `selection[repo]`, expand it to the five individual doc task ids: `update-changelog`, `update-user-guide`, `document-decisions`, `suggest-improvements`, `weekly-digest`. The allowlist and trigger config always use real task ids from `manifest.yml` — never the meta-option name.
+   **Meta-option expansion.** `update-docs` is a picker shorthand, not a real task id. When building `selection[repo]`, expand it to the five individual doc task ids: `update-changelog`, `update-user-guide`, `document-decisions`, `suggest-improvements`, `weekly-digest`. The allowlist and routine config always use real task ids from `manifest.yml` — never the meta-option name.
 
 3. Merge selected ids from all 3 questions into `selection[repo]` and move to the next repo. If the user selected nothing across all questions, record the empty set — the create step will skip the repo.
 
@@ -171,44 +171,45 @@ Show a compact summary of the picker output and the default schedule, ask for co
 
 Default schedule → UTC cron: build `0 23 * * *`, maintain `0 1 * * *`, audit `0 3 * * *`. If the user wants to tweak schedule or timezone, do it now, then proceed on explicit confirmation. If they decline, stop.
 
-**Step 4 — Create the triggers.**
+**Step 4 — Create the routines.**
 
-**Which triggers get created.** Fetch `https://raw.githubusercontent.com/frontkom/night-shift/main/manifest.yml` (you already fetched it for the picker in Step 2 — reuse the cache) and compute, per trigger, the set of task ids that belong to it by bundle membership:
+**Which routines get created.** Fetch `https://raw.githubusercontent.com/frontkom/night-shift/main/manifest.yml` (you already fetched it for the picker in Step 2 — reuse the cache) and compute, per routine, the set of task ids that belong to it by bundle membership:
 
-- **build trigger** — tasks where `bundle: plans`.
-- **maintain trigger** — tasks where `bundle: docs` OR `bundle: code-fixes`.
-- **audit trigger** — tasks where `bundle: audits`.
+- **build routine** — tasks where `bundle: plans`.
+- **maintain-docs routine** — tasks where `bundle: docs`.
+- **maintain-code routine** — tasks where `bundle: code-fixes`.
+- **audit routine** — tasks where `bundle: audits`.
 
 **Do not hardcode task ids in the skill.** Always derive them from `manifest.yml` so new tasks added later flow through automatically.
 
-A trigger is created only if at least one repo's selection has a non-empty intersection with that trigger's task set.
+A routine is created only if at least one repo's selection has a non-empty intersection with that routine's task set.
 
-**If a trigger's task set is empty across all repos, do not create that trigger.** This saves a slot against the 3-trigger cap. Tell the user which ones were skipped and why in Step 5's summary. The next time the user adds a task back in via "Change tasks for a repo", the skill re-creates the missing trigger.
+**If a routine's task set is empty across all repos, do not create that routine.** Tell the user which ones were skipped and why in Step 5's summary. The next time the user adds a task back in via "Change tasks for a repo", the skill re-creates the missing routine.
 
-**`sources[]` per trigger.** Include only repos whose selection includes at least one task belonging to that trigger's bundles. A repo with zero tasks in a bundle is not cloned for that trigger — it saves compute and keeps the summary clean.
+**`sources[]` per routine.** Include only repos whose selection includes at least one task belonging to that routine's bundles. A repo with zero tasks in a bundle is not cloned for that routine — it saves compute and keeps the summary clean.
 
-**Inline the wrapper prompt.** Remote agents sometimes refuse "Fetch URL and execute" instructions, treating them as prompt injection. To avoid this, **fetch each wrapper prompt yourself during setup and inline its contents as the trigger prompt**. For each trigger:
+**Inline the wrapper prompt.** Remote agents sometimes refuse "Fetch URL and execute" instructions, treating them as prompt injection. To avoid this, **fetch each wrapper prompt yourself during setup and inline its contents as the routine prompt**. For each routine:
 
 1. Fetch the wrapper file from GitHub using WebFetch (URLs below).
-2. Use the fetched content as the trigger's prompt text.
+2. Use the fetched content as the routine's prompt text.
 3. Append the `<night-shift-config>` block at the end.
 
-**Inline the allowlist.** Each trigger's prompt gets a `<night-shift-config>` block appended at the end. For the maintain trigger, list only the docs+code-fixes tasks each repo selected. For the audit trigger, list only the audit tasks each repo selected. **Never put a task id in a trigger's YAML that doesn't belong to that trigger's bundles** — the wrapper ignores mismatched ids, but keeping the YAML clean makes the trigger dashboard easier to read.
+**Inline the allowlist.** Each routine's prompt gets a `<night-shift-config>` block appended at the end. For each routine, list only the tasks from its bundle that each repo selected. **Never put a task id in a routine's YAML that doesn't belong to that routine's bundles** — the wrapper ignores mismatched ids, but keeping the YAML clean makes the routines dashboard easier to read.
 
 Use the `RemoteTrigger` tool with `action: "create"`. **Do not** include `https://github.com/frontkom/night-shift` in sources — that repo is public and writing run logs to it would leak private project information.
 
 **Fetching the environment_id (required, one-time).** The API requires a real `environment_id` — using `"default"` causes sessions to silently hang with no output. To get it:
 
 1. Call `RemoteTrigger` with `action: "list"`.
-2. If any triggers exist, grab `job_config.ccr.environment_id` from one of them — done.
-3. If **no triggers exist** (first-time setup), walk the user through a quick bootstrap:
-   - Tell them: *"I need to grab your environment ID. Go to **claude.ai/code → Scheduled → New**, enter any test prompt (e.g. 'say hello'), pick any repo, and save. Come back when done — I'll grab the ID and clean up the test trigger."*
+2. If any routines exist, grab `job_config.ccr.environment_id` from one of them — done.
+3. If **no routines exist** (first-time setup), walk the user through a quick bootstrap:
+   - Tell them: *"I need to grab your environment ID. Go to **claude.ai/code/routines → Create routine**, enter any test prompt (e.g. 'say hello'), pick any repo, and save. Come back when done — I'll grab the ID and clean up the test routine."*
    - Wait for the user to confirm, then `list` again to capture `environment_id`.
-   - Delete the bootstrap trigger if the user wants (or repurpose it).
+   - Delete the bootstrap routine if the user wants (or repurpose it).
 
-This only happens once — the `environment_id` is stable per account. Cache it for all triggers in this session.
+This only happens once — the `environment_id` is stable per account. Cache it for all routines in this session.
 
-**Exact API body structure.** The RemoteTrigger API nests settings inside `job_config.ccr`. Here is a complete example for one trigger — follow this structure exactly:
+**Exact API body structure.** The RemoteTrigger API nests settings inside `job_config.ccr`. Here is a complete example for one routine — follow this structure exactly:
 
 ```json
 {
@@ -244,56 +245,62 @@ This only happens once — the `environment_id` is stable per account. Cache it 
 }
 ```
 
-Generate a fresh UUID for each trigger's `events[0].data.uuid` using `python3 -c "import uuid; print(uuid.uuid4())"`.
+Generate a fresh UUID for each routine's `events[0].data.uuid` using `python3 -c "import uuid; print(uuid.uuid4())"`.
 
-### Trigger 1 — Build
+### Routine 1 — Build
 
 - **name**: `night-shift-build`
 - **cron_expression**: `0 23 * * *`
 - **wrapper URL**: `https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/multi-plans.md`
 - **prompt**: Fetch the wrapper URL with WebFetch, then use its full contents as the prompt. Append the `<night-shift-config>` block at the end.
 
-### Trigger 2 — Maintain
+### Routine 2 — Maintain (docs)
 
-- **name**: `night-shift-maintain`
+- **name**: `night-shift-docs`
 - **cron_expression**: `0 1 * * *`
-- **wrapper URL**: `https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/multi-docs-and-code-fixes.md`
+- **wrapper URL**: `https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/multi-docs.md`
 - **prompt**: Fetch the wrapper URL with WebFetch, then use its full contents as the prompt. Append the `<night-shift-config>` block at the end.
 
-### Trigger 3 — Audit
+### Routine 3 — Maintain (code fixes)
+
+- **name**: `night-shift-code-fixes`
+- **cron_expression**: `0 2 * * *`
+- **wrapper URL**: `https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/multi-code-fixes.md`
+- **prompt**: Fetch the wrapper URL with WebFetch, then use its full contents as the prompt. Append the `<night-shift-config>` block at the end.
+
+### Routine 4 — Audit
 
 - **name**: `night-shift-audit`
 - **cron_expression**: `0 3 * * *`
 - **wrapper URL**: `https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/multi-audits.md`
 - **prompt**: Fetch the wrapper URL with WebFetch, then use its full contents as the prompt. Append the `<night-shift-config>` block at the end.
 
-**Step 4b — Handle the trigger cap.**
+**Step 4b — Handle the routine cap.**
 
 If the user's plan rejects the create with `trigger_limit_reached`, tell them:
 
-> Your account has a 3-trigger cap. List your existing scheduled triggers and tell me which to delete. The Night Shift API can't delete — you'll need to delete them via https://claude.ai/code/scheduled.
-
-The cap appears to count enabled triggers. Disabled ones may also count, depending on plan tier.
+> Your account's routine limit has been reached. List your existing routines and tell me which to delete. The Night Shift API can't delete — you'll need to delete them via https://claude.ai/code/routines.
 
 **Step 5 — Summarise.**
 
-Once all triggers that should exist have been created, print:
+Once all routines that should exist have been created, print:
 
 ```
 ✓ Night Shift is set up.
 
-| Job | Schedule | Repos | Tasks |
+| Routine | Schedule | Repos | Tasks |
 |---|---|---|---|
 | build | <local time> | <N> | <M> selected |
-| maintain | <local time> | <N> | <M> selected |
+| docs | <local time> | <N> | <M> selected |
+| code-fixes | <local time> | <N> | <M> selected |
 | audit | <local time> | <N> | <M> selected |
 
-(Skipped: <any triggers not created because no repo selected any of their
-tasks — list them here, or "none" if all three were created.)
+(Skipped: <any routines not created because no repo selected any of their
+tasks — list them here, or "none" if all four were created.)
 
 Tomorrow morning, check docs/NIGHTSHIFT-HISTORY.md in each repo for what
-happened. The full summary table for each run is also in the trigger
-dashboard at https://claude.ai/code/scheduled. To pause Night Shift on
+happened. The full summary table for each run is also in the routines
+dashboard at https://claude.ai/code/routines. To pause Night Shift on
 any project, drop a .nightshift-skip file at its root. To change which
 tasks run on a repo, re-run /night-shift and pick "Change tasks for a
 repo". See https://github.com/frontkom/night-shift for the full reference.
@@ -311,48 +318,48 @@ When the user wants to try Night Shift on the current repo without scheduling an
 
 ## Parse-merge-rewrite contract
 
-All post-setup operations (add repo, remove repo, change tasks) must **read the current trigger prompt, parse the `<night-shift-config>` YAML block, merge the change in memory, and rewrite the prompt** — never regenerate from scratch. This preserves any hand-edits the user made in the Claude Code dashboard (different wrapper URL, extra instructions, etc.).
+All post-setup operations (add repo, remove repo, change tasks) must **read the current routine prompt, parse the `<night-shift-config>` YAML block, merge the change in memory, and rewrite the prompt** — never regenerate from scratch. This preserves any hand-edits the user made in the routines dashboard (different wrapper URL, extra instructions, etc.).
 
-Steps, for each of the three triggers in turn:
+Steps, for each of the four routines in turn:
 
-1. Read the trigger's current `prompt` via `RemoteTrigger` (`action: "get"`).
+1. Read the routine's current `prompt` via `RemoteTrigger` (`action: "get"`).
 2. Locate the `<night-shift-config>` / `</night-shift-config>` delimiters. If absent, treat the current state as "all tasks allowed for all repos" and synthesise a full map from the current `sources[]`.
 3. Parse the YAML, apply the change (add key, remove key, replace value), re-serialise.
 4. Splice the new YAML back between the delimiters, preserving everything else in the prompt.
 5. Update `sources[]` to match the union of `repos:` keys.
 6. Write back via `RemoteTrigger` (`action: "update"`).
 
-If merging produces an empty `repos:` map for a trigger, **delete that trigger** (not just update it). If a merge would re-populate a trigger that was previously deleted, **re-create it** using the Step 4 template from the Setup runbook.
+If merging produces an empty `repos:` map for a routine, **delete that routine** (not just update it). If a merge would re-populate a routine that was previously deleted, **re-create it** using the Step 4 template from the Setup runbook.
 
 ## Add a repo
 
 1. Ask the user for the repo URL(s). Normalise the same way as Step 1.
 2. For each new repo, run the **Step 2 picker loop** so the user selects its tasks.
-3. For each of the three triggers, parse-merge-rewrite: add the repo to `sources[]` and to the `repos:` map with its selected tasks (filtered to the tasks belonging to that trigger's bundles).
-4. If a trigger doesn't currently exist but the new repo has tasks for it, create it fresh using the Setup Step 4 template.
-5. Print a summary of which triggers were updated / created, the repos added, and the task counts.
+3. For each of the four routines, parse-merge-rewrite: add the repo to `sources[]` and to the `repos:` map with its selected tasks (filtered to the tasks belonging to that routine's bundles).
+4. If a routine doesn't currently exist but the new repo has tasks for it, create it fresh using the Setup Step 4 template.
+5. Print a summary of which routines were updated / created, the repos added, and the task counts.
 
 ## Remove a repo
 
 1. Ask the user which repo(s) to remove from the installation.
-2. For each of the three triggers, parse-merge-rewrite: drop the repo from `sources[]` and from the `repos:` map.
-3. If a trigger's `repos:` map becomes empty, delete the trigger entirely.
+2. For each of the four routines, parse-merge-rewrite: drop the repo from `sources[]` and from the `repos:` map.
+3. If a routine's `repos:` map becomes empty, delete the routine entirely.
 4. Print a summary.
 
 ## Change tasks for a repo
 
-1. List the current triggers and their `repos:` keys so the user can pick a repo. (Reject input for repos that aren't present in any trigger.)
-2. Parse the three trigger prompts to recover the repo's **union** of currently selected tasks across bundles — this is the starting state for the picker.
+1. List the current routines and their `repos:` keys so the user can pick a repo. (Reject input for repos that aren't present in any routine.)
+2. Parse the four routine prompts to recover the repo's **union** of currently selected tasks across bundles — this is the starting state for the picker.
 3. Run the **Step 2 picker loop** for that one repo, pre-checked with the current selection.
-4. For each of the three triggers, parse-merge-rewrite: replace the repo's entry in `repos:` with the new selection filtered to that trigger's bundles. Remove the repo entirely from a trigger if no task in that trigger's bundles is selected. Add it back to `sources[]` and `repos:` if new tasks in a trigger's bundles are selected.
-5. Create or delete triggers as needed when the map goes from empty → non-empty or vice versa.
+4. For each of the four routines, parse-merge-rewrite: replace the repo's entry in `repos:` with the new selection filtered to that routine's bundles. Remove the repo entirely from a routine if no task in that routine's bundles is selected. Add it back to `sources[]` and `repos:` if new tasks in a routine's bundles are selected.
+5. Create or delete routines as needed when the map goes from empty → non-empty or vice versa.
 6. Print a diff-style summary: "repo-a: +add-tests, -find-bugs".
 
 ## Status
 
 Check both backends and show a unified view:
 
-**Schedule backend:** List the user's current scheduled triggers via the `RemoteTrigger` tool (`action: "list"`). Filter to names starting with `night-shift-`. Show name, cron (converted to local time), and the repos in `sources[]`.
+**Schedule backend:** List the user's current routines via the `RemoteTrigger` tool (`action: "list"`). Filter to names starting with `night-shift-`. Show name, cron (converted to local time), and the repos in `sources[]`.
 
 **GitHub Actions backend:** Search for `.github/workflows/night-shift.yml` in sibling directories of the current working directory and common locations (`~/Sites`, `~/Projects`, `~/Code`, `~/repos`, `~/dev`). For each found, parse the `tasks:` value. Show repo path, cron schedule, and task count.
 
@@ -360,7 +367,7 @@ Present both in a single summary:
 
 > **Night Shift status:**
 >
-> **Schedule (remote triggers):**
+> **Schedule (routines):**
 > | Job | Schedule | Repos |
 > |---|---|---|
 > | build | ... | ... |
@@ -374,7 +381,7 @@ Present both in a single summary:
 
 ## GitHub Actions setup runbook
 
-This runbook is used when the user chooses **GitHub Actions** in Step 0b. The Schedule backend (above) remains completely separate — this section does not touch remote triggers.
+This runbook is used when the user chooses **GitHub Actions** in Step 0b. The Schedule backend (above) remains completely separate — this section does not touch routines.
 
 **GA-Step 1 — Welcome and explain, then ask for repos.**
 
@@ -461,7 +468,7 @@ or add a .nightshift-skip file at the repo root.
 
 **GA — Add / remove / change tasks for a repo.**
 
-For GitHub Actions repos, the task list lives in the workflow file's `tasks:` input (not in a trigger prompt). To modify:
+For GitHub Actions repos, the task list lives in the workflow file's `tasks:` input (not in a routine prompt). To modify:
 
 1. Fetch the repo's `.github/workflows/night-shift.yml` via `gh api repos/OWNER/REPO/contents/.github/workflows/night-shift.yml -q '.content' | base64 -d`.
 2. Read the current `tasks:` value and parse it into a list.
@@ -471,9 +478,9 @@ For GitHub Actions repos, the task list lives in the workflow file's `tasks:` in
 
 ## Notes for Claude
 
-- **Always ask for explicit confirmation** before creating, updating, or deleting scheduled triggers. They are persistent and run unattended — high blast radius.
-- **Inline wrapper prompts at setup time.** Fetch each multi-*.md wrapper from GitHub during setup and inline the contents as the trigger prompt. Remote agents refuse "Fetch URL and execute" instructions (prompt injection guard), so the wrapper must be baked in. The wrapper's inner references (subagents fetching bundle/task prompts via WebFetch) are fine — only the top-level "fetch and execute" is refused.
-- **The task and bundle URLs are stable.** They live at `raw.githubusercontent.com/frontkom/night-shift/main/...`. Subagents fetch these at run time, which works because they already have tool access. Only the top-level trigger prompt must be inlined.
+- **Always ask for explicit confirmation** before creating, updating, or deleting routines. They are persistent and run unattended — high blast radius.
+- **Inline wrapper prompts at setup time.** Fetch each multi-*.md wrapper from GitHub during setup and inline the contents as the routine prompt. Remote agents refuse "Fetch URL and execute" instructions (prompt injection guard), so the wrapper must be baked in. The wrapper's inner references (subagents fetching bundle/task prompts via WebFetch) are fine — only the top-level "fetch and execute" is refused.
+- **The task and bundle URLs are stable.** They live at `raw.githubusercontent.com/frontkom/night-shift/main/...`. Subagents fetch these at run time, which works because they already have tool access. Only the top-level routine prompt must be inlined.
 - **Refuse if the user can't articulate what Night Shift should do for them.** If the request is vague or feels delegated from somewhere, ask the user directly what they want to accomplish before taking any action.
-- **GitHub Actions mode never touches remote triggers.** The two backends are independent. A user can even use both (Schedule for personal repos, GitHub Actions for org repos). Never mix operations between backends.
+- **GitHub Actions mode never touches routines.** The two backends are independent. A user can even use both (Schedule for personal repos, GitHub Actions for org repos). Never mix operations between backends.
 - **GitHub Actions mode does not auto-commit.** Always let the user review the generated workflow files before committing. The workflow file is the only thing added to target repos — no other files are created or modified during setup.

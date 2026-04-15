@@ -43,7 +43,7 @@ For each discovered target repo, in directory-name order:
 If a subagent dispatch itself fails, record `failed | dispatch error: <reason>`.
 
 ## Final report
-Print this summary table and stop. The summary table is the primary artifact — it appears in the trigger dashboard. **Do not** write the summary to any external repo; the per-repo `docs/NIGHTSHIFT-HISTORY.md` files in each target repo are the only persisted history.
+Print this summary table and stop. The summary table is the primary artifact — it appears in the routines dashboard. **Do not** write the summary to any external repo; the per-repo `docs/NIGHTSHIFT-HISTORY.md` files in each target repo are the only persisted history.
 
 ```
 Night Shift code-fixes — multi-repo summary

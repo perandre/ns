@@ -1,10 +1,10 @@
 # Multi-repo runner — shared protocol
 
-This file documents the loop semantics used by the `multi-*.md` wrappers. It is not fetched by triggers directly — it's reference reading for the wrappers and for humans editing them.
+This file documents the loop semantics used by the `multi-*.md` wrappers. It is not fetched by routines directly — it's reference reading for the wrappers and for humans editing them.
 
 ## Per-repo task allowlist (the `<night-shift-config>` block)
 
-The skill stores the per-repo task selection **inside the trigger prompt itself**, as a YAML block between explicit delimiters. The wrapper parses this block out of its own invocation prompt on every run and uses it to filter which tasks it dispatches per repo.
+The skill stores the per-repo task selection **inside the routine prompt itself**, as a YAML block between explicit delimiters. The wrapper parses this block out of its own invocation prompt on every run and uses it to filter which tasks it dispatches per repo.
 
 **Format** (exact delimiters, no variations):
 
@@ -16,7 +16,7 @@ repos:
 </night-shift-config>
 ```
 
-- Keys are full `https://github.com/owner/repo` URLs (no `.git`, matching how they appear in the trigger's `sources[]`). For a monorepo with `apps:`, a future version may accept `https://github.com/owner/repo#app-slug` keys; unknown `#…` suffixes must fall back to the bare repo key.
+- Keys are full `https://github.com/owner/repo` URLs (no `.git`, matching how they appear in the routine's `sources[]`). For a monorepo with `apps:`, a future version may accept `https://github.com/owner/repo#app-slug` keys; unknown `#…` suffixes must fall back to the bare repo key.
 - Values are YAML lists of **task ids** from `manifest.yml` (e.g. `build-planned-features`, not `task 1`). Task ids are the contract end-to-end — never numbers.
 - An empty list `[]` means "no tasks for this repo in this bundle"; the wrapper records `not-selected` in the summary and dispatches nothing for that repo.
 - A repo absent from `repos:` defaults to **all tasks allowed** (same as no config block at all). This keeps single-repo ad-hoc invocations working.
@@ -34,11 +34,11 @@ repos:
 - Intersect the allowlist against the set of this bundle's tasks. If the intersection is empty, record `not-selected` for that repo and do not dispatch any subagents for it.
 - Pass `allowed_tasks: [<intersection as YAML list>]` to every subagent dispatched for this repo. Subagents forward it to the inner bundle and each task, which self-check their own id against the list and exit silently if not present.
 
-**When the user hand-edits the prompt.** The skill's add/remove/update-repo flows must **read the current trigger prompt, parse the YAML, merge the change, and rewrite** — never regenerate from scratch. This preserves any hand-edits the user made in the Claude Code dashboard.
+**When the user hand-edits the prompt.** The skill's add/remove/update-repo flows must **read the current routine prompt, parse the YAML, merge the change, and rewrite** — never regenerate from scratch. This preserves any hand-edits the user made in the routines dashboard.
 
-## How the trigger lays out repos
+## How the routine lays out repos
 
-When a trigger declares multiple `sources[]` entries with `git_repository`, the remote environment clones each one as a sibling directory at the top of the working tree:
+When a routine declares multiple `sources[]` entries with `git_repository`, the remote environment clones each one as a sibling directory at the top of the working tree:
 
 ```
 <working dir>/
@@ -183,7 +183,7 @@ A project with explicit Night Shift Config in `CLAUDE.md` always overrides these
 
 ## Final report
 
-After all repos are processed, print one table and stop. The summary table is the primary run artifact — it appears in the trigger dashboard output and is how the user reviews the run the next morning.
+After all repos are processed, print one table and stop. The summary table is the primary run artifact — it appears in the routines dashboard output and is how the user reviews the run the next morning.
 
 ```
 Night Shift <bundle-name> — multi-repo summary

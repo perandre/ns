@@ -32,7 +32,7 @@ Night Shift supports two backends:
 
 | Backend | How it runs | Requirements |
 |---|---|---|
-| **Schedule** | Claude Code remote triggers (runs on your account) | Claude subscription — no API key needed |
+| **Schedule** | Claude Code routines (runs on your account) | Claude subscription — no API key needed |
 | **GitHub Actions** | GitHub-hosted runners via a reusable workflow | `ANTHROPIC_API_KEY` in org/repo secrets + `gh` CLI |
 
 During setup, `/night-shift` runs a **per-repo task picker** — for each repo you add, you choose which of the 12 tasks should run nightly. Defaults are all-on, with a warning that the 4 audit tasks open PRs when they find issues. To change a repo's selection later, re-run `/night-shift` and pick **Change tasks for a repo**.
@@ -94,7 +94,7 @@ Add a `## Night Shift Config` section to the project's `CLAUDE.md`. All fields a
 - Key pages: /dashboard, /surveys, /people
 ```
 
-**Task selection is not in this file.** Which tasks run on which repo is decided at setup time via the picker in `/night-shift`, and stored in the trigger prompts themselves. To change a repo's task selection, re-run `/night-shift` and pick **Change tasks for a repo**.
+**Task selection is not in this file.** Which tasks run on which repo is decided at setup time via the picker in `/night-shift`, and stored in the routine prompts themselves. To change a repo's task selection, re-run `/night-shift` and pick **Change tasks for a repo**.
 
 ## Testing
 

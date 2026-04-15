@@ -99,7 +99,7 @@ Return EXACTLY ONE LINE to me in this format:
 Record the result as a row with `App = —`, `Plan = work-on-issues`.
 
 ## Final report
-Print this summary table and stop. The summary table is the primary artifact — it appears in the trigger dashboard and is how the user reviews the run. **Do not** write the summary to any external repo or location; the per-repo `docs/NIGHTSHIFT-HISTORY.md` files in each target repo are the only persisted history.
+Print this summary table and stop. The summary table is the primary artifact — it appears in the routines dashboard and is how the user reviews the run. **Do not** write the summary to any external repo or location; the per-repo `docs/NIGHTSHIFT-HISTORY.md` files in each target repo are the only persisted history.
 
 ```
 Night Shift plans — multi-repo summary
@@ -111,4 +111,4 @@ Night Shift plans — multi-repo summary
 
 One row per (repo, app, plan). `App` is `—` for single-app repos. `Plan` is `—` when the app-scope had no plan files (the row will be `silent`). `Plan` is `work-on-issues` for the issues dispatch. A repo excluded from the allowlist produces one row with `App = —`, `Plan = —`, `Status = not-selected`.
 
-Include any `allowlist: …` or `allowlist warning: …` lines from the parsing step as bullet points beneath the table so the user sees them on the trigger dashboard.
+Include any `allowlist: …` or `allowlist warning: …` lines from the parsing step as bullet points beneath the table so the user sees them on the routines dashboard.

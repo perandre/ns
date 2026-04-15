@@ -3,12 +3,12 @@
 ## For users
 
 ### Set up, add a project, check status
-Type `/night-shift` in any Claude Code session. The skill walks you through it and asks before any scheduled-trigger change.
+Type `/night-shift` in any Claude Code session. The skill walks you through it and asks before any routine change.
 
 ### Pick which tasks run per repo
 During setup, for each repo in your list, the skill opens a real keyboard-navigable checklist (Claude Code's `AskUserQuestion` UI) showing all 12 tasks in bundle order: plans, docs, code-fixes, audits. Use arrows + space to toggle, enter to confirm. Defaults are all-on; the 4 audit tasks come with a warning that they open PRs nightly when they find issues.
 
-The selection lives inside the trigger prompts as a `<night-shift-config>` YAML block, not in any per-repo file. To change a repo's selection after setup, run `/night-shift` and pick **Change tasks for a repo**.
+The selection lives inside the routine prompts as a `<night-shift-config>` YAML block, not in any per-repo file. To change a repo's selection after setup, run `/night-shift` and pick **Change tasks for a repo**.
 
 ### Pause Night Shift on a project
 In the project repo, do either of these:
@@ -18,7 +18,7 @@ In the project repo, do either of these:
 The next run reports `opted-out` and skips it. Remove the marker to re-enable.
 
 ### Run a bundle now without waiting
-- **Schedule backend:** Open https://claude.ai/code/scheduled, click a trigger, click **Run now**.
+- **Schedule backend:** Open https://claude.ai/code/routines, click a routine, click **Run now**.
 - **GitHub Actions:** Go to the repo's Actions tab → Night Shift → **Run workflow**.
 
 ### Customise per project
@@ -72,4 +72,4 @@ The `scope` field controls monorepo fan-out. `scope: app` (default) tasks run on
 Edit `manifest.yml`. If the `id` changes, `git mv` the `tasks/<id>.md` file to match. Commit and push to `main`. Live on the next run.
 
 ### Add or rename a bundle
-Edit the `bundles:` map in `manifest.yml`, then rename/create the matching `bundles/<id>.md` and `bundles/multi-<id>.md` files. Update the trigger prompt to point at the new `multi-*` URL.
+Edit the `bundles:` map in `manifest.yml`, then rename/create the matching `bundles/<id>.md` and `bundles/multi-<id>.md` files. Update the routine prompt to point at the new `multi-*` URL.

@@ -5,7 +5,7 @@ You are running **two** Night Shift bundles in one session: **docs** first, then
 **Before doing anything else**, print a single status line so the user sees immediate output:
 `Night Shift docs + code-fixes bundle starting (multi-repo)...`
 
-This is a runtime composition that exists because the trigger plan only allows 3 enabled triggers but Night Shift has 4 logical bundles. The two underlying bundles are unchanged — see `bundles/docs.md` and `bundles/code-fixes.md` for what each does.
+This is a runtime composition that runs docs and code-fixes in a single session. It exists as a convenience for setups that want to minimise the number of routines. For setups with enough routine slots, `multi-docs.md` and `multi-code-fixes.md` can be used separately instead. The two underlying bundles are unchanged — see `bundles/docs.md` and `bundles/code-fixes.md` for what each does.
 
 ## Why docs runs first
 
@@ -91,7 +91,7 @@ For each discovered target repo, in directory-name order:
 If a subagent dispatch itself fails, record `failed | docs: — | code-fixes: — | dispatch error: <reason>`.
 
 ## Final report
-Print this summary table and stop. The summary table is the primary artifact — it appears in the trigger dashboard. **Do not** write the summary to any external repo; the per-repo `docs/NIGHTSHIFT-HISTORY.md` files in each target repo are the only persisted history.
+Print this summary table and stop. The summary table is the primary artifact — it appears in the routines dashboard. **Do not** write the summary to any external repo; the per-repo `docs/NIGHTSHIFT-HISTORY.md` files in each target repo are the only persisted history.
 
 ```
 Night Shift docs+code-fixes — multi-repo summary
