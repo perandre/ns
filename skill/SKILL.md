@@ -6,12 +6,12 @@ description: |
   Use this skill when the user explicitly asks to: install Night Shift, set up Night Shift, schedule Night Shift, run a Night Shift bundle, add a repo to Night Shift, remove a repo from Night Shift, pause Night Shift on a project, or check Night Shift status.
 
   MANDATORY TRIGGERS: night-shift, night shift, nightshift, /night-shift, set up night shift, install night shift, schedule night shift, run night shift, night shift setup, night shift install
-version: 2026-04-17a
+version: 2026-04-17b
 ---
 
 # Night Shift
 
-<!-- NIGHT_SHIFT_VERSION: 2026-04-17a -->
+<!-- NIGHT_SHIFT_VERSION: 2026-04-17b -->
 
 ## Version check (run this first, every invocation)
 
@@ -165,11 +165,13 @@ Show a compact summary of the picker output and the default schedule, ask for co
 > | `owner/repo-a` | 8 selected (plans, docs, code-fixes) |
 > | `owner/repo-b` | 3 selected (find-bugs, improve-seo, improve-performance) |
 >
-> **Schedule** (Europe/Oslo): build 01:00, maintain 03:00, audit 05:00.
+> **Schedule** (Europe/Oslo, weeknights only): build 01:00, maintain 03:00, audit 05:00.
+>
+> Skips Friday and Saturday nights — people rarely review PRs on Saturday or Sunday.
 >
 > Proceed?
 
-Default schedule → UTC cron: build `0 23 * * *`, maintain `0 1 * * *`, audit `0 3 * * *`. If the user wants to tweak schedule or timezone, do it now, then proceed on explicit confirmation. If they decline, stop.
+Default schedule → UTC cron, weeknights only: build `0 23 * * 0-4` (Sun-Thu UTC night → Mon-Fri morning), maintain-docs `0 1 * * 1-5`, maintain-code `0 2 * * 1-5`, audit `0 3 * * 1-5` (Mon-Fri UTC). The build routine fires before midnight UTC so it uses days 0-4 (Sun-Thu) to produce Mon-Fri morning PRs; the others fire after midnight so they use 1-5 (Mon-Fri). All four schedules deliberately skip producing PRs visible Saturday or Sunday morning. If the user wants to tweak schedule, timezone, or include weekends, do it now, then proceed on explicit confirmation. If they decline, stop.
 
 **Step 4 — Create the routines.**
 
@@ -214,7 +216,7 @@ This only happens once — the `environment_id` is stable per account. Cache it 
 ```json
 {
   "name": "night-shift-build",
-  "cron_expression": "0 23 * * *",
+  "cron_expression": "0 23 * * 0-4",
   "enabled": true,
   "job_config": {
     "ccr": {
@@ -250,28 +252,28 @@ Generate a fresh UUID for each routine's `events[0].data.uuid` using `python3 -c
 ### Routine 1 — Build
 
 - **name**: `night-shift-build`
-- **cron_expression**: `0 23 * * *`
+- **cron_expression**: `0 23 * * 0-4` (Sun-Thu UTC night → Mon-Fri morning; skips Fri+Sat night so no Sat/Sun morning PRs)
 - **wrapper URL**: `https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/multi-plans.md`
 - **prompt**: Fetch the wrapper URL with WebFetch, then use its full contents as the prompt. Append the `<night-shift-config>` block at the end.
 
 ### Routine 2 — Maintain (docs)
 
 - **name**: `night-shift-docs`
-- **cron_expression**: `0 1 * * *`
+- **cron_expression**: `0 1 * * 1-5` (Mon-Fri UTC; skips Sat+Sun mornings)
 - **wrapper URL**: `https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/multi-docs.md`
 - **prompt**: Fetch the wrapper URL with WebFetch, then use its full contents as the prompt. Append the `<night-shift-config>` block at the end.
 
 ### Routine 3 — Maintain (code fixes)
 
 - **name**: `night-shift-code-fixes`
-- **cron_expression**: `0 2 * * *`
+- **cron_expression**: `0 2 * * 1-5` (Mon-Fri UTC; skips Sat+Sun mornings)
 - **wrapper URL**: `https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/multi-code-fixes.md`
 - **prompt**: Fetch the wrapper URL with WebFetch, then use its full contents as the prompt. Append the `<night-shift-config>` block at the end.
 
 ### Routine 4 — Audit
 
 - **name**: `night-shift-audit`
-- **cron_expression**: `0 3 * * *`
+- **cron_expression**: `0 3 * * 1-5` (Mon-Fri UTC; skips Sat+Sun mornings)
 - **wrapper URL**: `https://raw.githubusercontent.com/frontkom/night-shift/main/bundles/multi-audits.md`
 - **prompt**: Fetch the wrapper URL with WebFetch, then use its full contents as the prompt. Append the `<night-shift-config>` block at the end.
 
