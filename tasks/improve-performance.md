@@ -47,6 +47,9 @@ Only open a PR when you can point to a concrete, low-risk win that will clearly 
    gh pr create --title "nightshift/perf: <app_path> — performance sweep" \
      --label nightshift --label "nightshift:audits" \
      --body "$(cat <<'EOF'
+   ## Plain summary
+   <1-2 sentences in the project's user language. Which pages feel faster now, by roughly how much (e.g. "~30% faster initial paint on the dashboard"), and who notices (anyone visiting that page on slow connections). No bundle-name jargon. See bundles/_multi-runner.md → "Body header — Plain summary".>
+
    ## Summary
    Performance pass over key pages.
 

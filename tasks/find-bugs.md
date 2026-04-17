@@ -47,6 +47,9 @@ Only open a PR for a bug that is clearly real, clearly the codebase's fault (not
    gh pr create --title "nightshift/bug: <app_path> — <short description>" \
      --label nightshift --label "nightshift:audits" \
      --body "$(cat <<'EOF'
+   ## Plain summary
+   <1-2 sentences in the project's user language. Who was affected, what did they experience, what changes now. No symbol names, no file paths, no error classes. See bundles/_multi-runner.md → "Body header — Plain summary" for the full convention.>
+
    ## Bug
    <what is wrong, with file:line>
 

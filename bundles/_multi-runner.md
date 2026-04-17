@@ -152,6 +152,25 @@ _[Session log](<session-url>)_
 
 The footer is required; the session line is optional. Together they make every PR self-describing for reviewers and auditable from `gh pr list --label nightshift`.
 
+### Body header — `## Plain summary` (first section of every code PR body)
+
+Every PR that touches code (audits, code-fixes, plans, work-on-issues) must open with a `## Plain summary` section before any technical content. This is the section a non-technical stakeholder (PM, designer, customer success) reads to decide if they care about the change. Conventions:
+
+- **1–2 sentences max.** Anything longer is no longer a summary.
+- **No internal symbols.** Don't write function names (`createIndividualSurvey`), error classes (`TypeError`), file paths (`apps/intranett/src/lib/actions.ts:2058`), mock fixtures, or stack-trace excerpts. Save those for the technical sections below.
+- **Frame the user/stakeholder impact.** "Who was affected, what did they experience, what changes after this fix." If you can't articulate user impact, the change probably belongs in `docs/SUGGESTIONS.md` instead of a PR.
+- **Use the project's user language** (e.g. Norwegian if the product is Norwegian) so a PM reading the PR list sees consistent prose. The technical sections below stay in English.
+- **No "this PR …" framing.** Just describe the change as if explaining it to the user themselves: "Survey creation no longer crashes when …", not "This PR fixes a crash in survey creation when …".
+
+Example for a bug PR like #125:
+
+```
+## Plain summary
+Saksbehandlere som opprettet en individuell kartlegging kunne i sjeldne tilfeller få en generisk feilmelding uten forklaring. De får nå en tydelig norsk feilmelding og kan trygt prøve igjen.
+```
+
+Doc-only tasks (changelog, ADR, digest, suggestions, user-guide) skip this section — their entire body is already user-readable. Test-only PRs (`add-tests`) also skip — they have no user impact to describe.
+
 ## NIGHTSHIFT-HISTORY.md is wrapper-only
 
 Tasks **must not** modify `docs/NIGHTSHIFT-HISTORY.md` themselves. The history row is appended by the multi-runner wrapper on `main` (in a separate commit, never on a feature branch) **after** the dispatched subagent returns its one-line result. This keeps feature PRs free of housekeeping diffs and means the row contains the real PR number returned by the subagent.
