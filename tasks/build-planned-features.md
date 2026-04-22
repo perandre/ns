@@ -38,6 +38,12 @@ When no `app_path` is provided (single-app repo), the plans directory defaults t
 
 4. **Update the plan file.** After implementing a phase, mark it as completed in the plan file itself so the same phase is not re-implemented on subsequent runs. Use the plan's existing convention for marking completion (e.g. checkboxes `[x]`, strikethrough, "Status: Done", etc.). If no convention exists, add a line like `**Status: Implemented (YYYY-MM-DD)**` under the phase heading.
 
+4b. **If you just implemented the last pending unit, delete the plan file in the same PR.** Re-scan the plan after marking step 4: if **zero** pending units remain (every phase / item / step / milestone is now marked done), the plan has served its purpose. Use `git rm <plan-file>` so the deletion is part of the PR diff, and suffix the PR title with ` (completes plan)`. The plan's history stays in git — what we lose from the live `docs/` tree is the noise of completed roadmaps, not the historical record.
+
+   **Opt-out** — if the plan file contains the literal string `nightshift: keep` anywhere (front matter, an HTML comment like `<!-- nightshift: keep -->`, or a `Status:` line such as `**Status: Complete (keep as reference)**`), do **not** delete it. The user wants that plan preserved as a live reference. Mark it as `**Status: Implemented (YYYY-MM-DD)**` and leave the file in place; future wrapper pre-filters will record it as `not-applicable` indefinitely without dispatching a subagent.
+
+   **Migration tip for plans that contain non-roadmap material:** if the plan file has design rationale, alternatives-considered, or other reference material the team wants to keep beyond implementation, move that material to an ADR (`docs/adr/NNNN-<slug>.md`) **before** the final unit lands. The plan file then truly only contains roadmap and can be safely deleted.
+
 5. Check for an existing open PR for this plan + phase to avoid duplicates:
    ```
    gh pr list --search "nightshift/plan in:title" --state open --json title
@@ -81,21 +87,27 @@ cat > /tmp/nightshift-pr-body.md <<'EOF'
 
 ## Plan file updated
 - Marked phase <N> as implemented in <plan filename>
+- <if last unit: "Deleted <plan filename> — plan complete; history preserved in git">
 
 ## Verification
 - test command output: pass
 - build command output: pass
 
 ## Next phase
-<short note on what would be next so the human reviewer knows the trajectory>
+<short note on what would be next so the human reviewer knows the trajectory; for a completing PR write "None — this PR completes the plan and removes <plan filename>.">
 
 ---
 _Run by Night Shift • plans/build-planned-features_
 EOF
 
+# When this PR completes the plan, suffix the title with " (completes plan)":
 gh pr create --title "nightshift/plan: <app_path> — <plan-name> phase <N>" \
   --label nightshift --label "nightshift:plans" \
   --body-file /tmp/nightshift-pr-body.md
+# Final-unit variant:
+# gh pr create --title "nightshift/plan: <app_path> — <plan-name> phase <N> (completes plan)" \
+#   --label nightshift --label "nightshift:plans" \
+#   --body-file /tmp/nightshift-pr-body.md
 ```
 
 **Always use `--body-file`, never inline `--body`.** Inline body strings get silently flattened to one-liners with literal `\n` — the entire PR body then renders as one unbroken paragraph on GitHub. See `bundles/_multi-runner.md` → "PR body formatting".
@@ -107,3 +119,4 @@ gh pr create --title "nightshift/plan: <app_path> — <plan-name> phase <N>" \
 - If the supplied `PLAN_FILE` has no pending units, exit silently.
 - If a PR for the same plan + unit (+ app, when scoped) is already open, exit silently — do not stack.
 - Always update the plan file to mark completed units — this is what prevents re-running the same work.
+- When the unit you implement is the **last** pending one, also `git rm` the plan file in the same PR — unless the plan opts out via `nightshift: keep`. The completed-plan deletion is part of the unit-completion contract, not a separate cleanup step.
