@@ -80,8 +80,19 @@ For each work-item, in deterministic order (repo directory name, then app path):
    - Instructs it to **never modify `docs/NIGHTSHIFT-HISTORY.md`** — the wrapper appends history rows on `main` after the subagent returns. See **NIGHTSHIFT-HISTORY.md is wrapper-only** above.
    - Asks it to return **one single line** to the wrapper, format: `<status> | PR: <url or —> | <terse note>` where status ∈ {`ok`, `silent`, `failed`}.
 3. Capture only that one-line result. Do **not** read or echo the subagent's intermediate work.
-4. **On `main`, in the parent repo directory**, append one history row per (bundle, app) pair to `docs/NIGHTSHIFT-HISTORY.md` (creating the file if missing), then commit + push that single change. The line format is documented below. This append step is the wrapper's responsibility — it must happen after every subagent dispatch, including `silent` and `failed` outcomes.
-5. Move on to the next work-item.
+4. **PR body sanity-fix.** If the one-line result contains `PR: https://...`, extract the URL and run:
+   ```bash
+   body=$(gh pr view <url> --json body -q .body)
+   case "$body" in
+     *'\n'*)
+       printf '%s' "$body" | python3 -c "import sys;sys.stdout.write(sys.stdin.read().replace('\\\\n',chr(10)))" > /tmp/nightshift-body-fix.md
+       gh pr edit <url> --body-file /tmp/nightshift-body-fix.md
+       ;;
+   esac
+   ```
+   This catches the case where a subagent ignored the `--body-file` rule and flattened the body to a single line with literal `\n`. The fix is idempotent (re-running on an already-clean body is a no-op) and cheap. See **PR body formatting** below for why this defense exists.
+5. **On `main`, in the parent repo directory**, append one history row per (bundle, app) pair to `docs/NIGHTSHIFT-HISTORY.md` (creating the file if missing), then commit + push that single change. The line format is documented below. This append step is the wrapper's responsibility — it must happen after every subagent dispatch, including `silent` and `failed` outcomes.
+6. Move on to the next work-item.
 
 If a subagent dispatch itself throws an unrecoverable error, record `failed | dispatch error: <reason>` and continue. Never abort the multi-repo run.
 
