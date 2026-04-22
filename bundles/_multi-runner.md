@@ -160,6 +160,20 @@ gh pr create --title "night-shift/<area>: ..." \
   --body "..."
 ```
 
+### Arm auto-merge immediately after `gh pr create` (every task)
+
+Every `gh pr create` call must be followed by:
+
+```
+gh pr merge --auto --squash
+```
+
+on the same branch. `--auto` arms auto-merge but does **not** bypass human review or required checks — the PR enters the merge queue only once you approve it in the morning and every required check is green. The queue then rebases the PR onto fresh `main`, re-runs required checks on the rebased commit, and lands it.
+
+Why this matters: without auto-merge armed, Night Shift PRs sit on their original tree all day. When sibling PRs merge first, each remaining PR goes stale against `main` (missing modules added by siblings, stale CI aggregators, merge conflicts with fresh code). Arming auto-merge lets the queue handle freshness automatically the moment you approve.
+
+If auto-merge fails (repo has no merge queue, or the CLI rejects the flag), log the error but do not fail the task — the PR is already created and a human can merge it manually.
+
 ### Body footer (last lines of every PR body)
 Every PR body must end with this footer block, separated from the body by a horizontal rule:
 
