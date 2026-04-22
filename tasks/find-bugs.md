@@ -8,8 +8,8 @@ Read `CLAUDE.md` for **Night Shift Config**: test command, build command, defaul
 **Scoping.** If the dispatching multi-runner passes an `app_path` (non-empty, not `—`), operate inside that app only:
 - Only scan files under `<app_path>` for bugs.
 - Use the app-scoped test and build commands from the scoped config.
-- Branch name includes the app slug: `nightshift/bug-<app-slug>-YYYY-MM-DD-<slug>`.
-- PR title names the app: `nightshift/bug: <app_path> — <short description>`.
+- Branch name includes the app slug: `night-shift/bug-<app-slug>-YYYY-MM-DD-<slug>`.
+- PR title names the app: `night-shift/bug: <app_path> — <short description>`.
 
 Without an `app_path`, behave as before (whole repo, no app slug in branch / PR title).
 
@@ -19,7 +19,7 @@ Only open a PR for a bug that is clearly real, clearly the codebase's fault (not
 ## Steps
 1. Check for existing open night-shift bug PRs to avoid duplicates (scope the search to this app when scoped):
    ```
-   gh pr list --search "nightshift/bug in:title" --state open
+   gh pr list --search "night-shift/bug in:title" --state open
    ```
 2. Look for (inside `<app_path>` when scoped):
    - Off-by-one errors and boundary conditions
@@ -34,15 +34,15 @@ Only open a PR for a bug that is clearly real, clearly the codebase's fault (not
 4. Create a branch (include the app slug when scoped):
    ```
    # scoped:
-   git checkout -b nightshift/bug-<app-slug>-YYYY-MM-DD-<slug>
+   git checkout -b night-shift/bug-<app-slug>-YYYY-MM-DD-<slug>
    # unscoped:
-   git checkout -b nightshift/bug-YYYY-MM-DD-<slug>
+   git checkout -b night-shift/bug-YYYY-MM-DD-<slug>
    ```
 5. Add a failing test that demonstrates the bug. Then fix the bug. Test must now pass.
 6. Run the scoped **test suite** and the scoped **build command**. Both must pass.
 7. Push and open a PR (prefix the title with `<app_path> — ` when scoped). The wrapper has already created the standard labels for this repo — just attach them. **Always use `--body-file`, never inline `--body`.** End the body with the Night Shift footer:
    ```
-   cat > /tmp/nightshift-pr-body.md <<'EOF'
+   cat > /tmp/night-shift-pr-body.md <<'EOF'
    ## Plain summary
    <1-2 sentences in English (PR review is always in English, regardless of the product's user language). Who was affected, what did they experience, what changes now. No symbol names, no file paths, no error classes. See bundles/_multi-runner.md → "Body header — Plain summary" for the full convention.>
 
@@ -59,9 +59,9 @@ Only open a PR for a bug that is clearly real, clearly the codebase's fault (not
    _Run by Night Shift • audits/find-bugs_
    EOF
 
-   gh pr create --title "nightshift/bug: <app_path> — <short description>" \
-     --label nightshift --label "nightshift:audits" \
-     --body-file /tmp/nightshift-pr-body.md
+   gh pr create --title "night-shift/bug: <app_path> — <short description>" \
+     --label night-shift --label "night-shift:audits" \
+     --body-file /tmp/night-shift-pr-body.md
    ```
 
    **Do not** modify `docs/NIGHTSHIFT-HISTORY.md` from this branch — the multi-runner wrapper appends the history row on `main` after you return your one-line result.

@@ -9,8 +9,8 @@ Read `CLAUDE.md` for **Night Shift Config**: key pages, doc/UI language, test co
 - Read `key pages` from the scoped config (the `apps[]` entry for this app), not the top-level list.
 - Only audit and modify files under `<app_path>`.
 - Use the app-scoped test and build commands from the scoped config.
-- Branch: `nightshift/seo-<app-slug>-YYYY-MM-DD`.
-- PR title: `nightshift/seo: <app_path> — metadata sweep`.
+- Branch: `night-shift/seo-<app-slug>-YYYY-MM-DD`.
+- PR title: `night-shift/seo: <app_path> — metadata sweep`.
 
 Without an `app_path`, behave as before.
 
@@ -20,7 +20,7 @@ Only open a PR for clear, real SEO issues on genuinely public pages. Do not add 
 ## Steps
 1. Check for an existing open night-shift SEO PR for this app (or repo when unscoped):
    ```
-   gh pr list --search "nightshift/seo in:title" --state open
+   gh pr list --search "night-shift/seo in:title" --state open
    ```
    If one exists for the same app, exit silently — do not stack PRs.
 
@@ -52,14 +52,14 @@ Only open a PR for clear, real SEO issues on genuinely public pages. Do not add 
 5. Fix all clear issues in one branch (include app slug when scoped):
    ```
    # scoped:
-   git checkout -b nightshift/seo-<app-slug>-YYYY-MM-DD
+   git checkout -b night-shift/seo-<app-slug>-YYYY-MM-DD
    # unscoped:
-   git checkout -b nightshift/seo-YYYY-MM-DD
+   git checkout -b night-shift/seo-YYYY-MM-DD
    ```
 6. Run the scoped **test suite** and the scoped **build command**. Both must pass.
 7. Push and open the PR (prefix title with `<app_path> — ` when scoped). The wrapper has already created the standard labels for this repo — just attach them. **Always use `--body-file`, never inline `--body`.** End the body with the Night Shift footer:
    ```
-   cat > /tmp/nightshift-pr-body.md <<'EOF'
+   cat > /tmp/night-shift-pr-body.md <<'EOF'
    ## Plain summary
    <1-2 sentences in English (PR review is always in English, regardless of the product's user language). Which public pages now show better titles / link previews / search snippets, and what visitors / search engines see differently. No og:* / JSON-LD jargon here. See bundles/_multi-runner.md → "Body header — Plain summary".>
 
@@ -76,9 +76,9 @@ Only open a PR for clear, real SEO issues on genuinely public pages. Do not add 
    _Run by Night Shift • audits/improve-seo_
    EOF
 
-   gh pr create --title "nightshift/seo: <app_path> — metadata sweep" \
-     --label nightshift --label "nightshift:audits" \
-     --body-file /tmp/nightshift-pr-body.md
+   gh pr create --title "night-shift/seo: <app_path> — metadata sweep" \
+     --label night-shift --label "night-shift:audits" \
+     --body-file /tmp/night-shift-pr-body.md
    ```
 
    **Do not** modify `docs/NIGHTSHIFT-HISTORY.md` from this branch — the multi-runner wrapper appends the history row on `main` after you return your one-line result.

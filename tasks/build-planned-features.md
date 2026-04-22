@@ -20,8 +20,8 @@ Read `CLAUDE.md` for the **Night Shift Config** section (test command, build com
 - The plans directory is `<app_path>/<plans dir>` (default `<app_path>/docs`).
 - All file paths referenced by the plan are interpreted relative to the repo root but must live under `<app_path>`. Skip plans that touch files outside `<app_path>`.
 - Use the app-scoped test and build commands from the scoped config.
-- The branch name includes the app slug: `nightshift/plan-<app-slug>-<plan-slug>-YYYY-MM-DD` where `<app-slug>` is the last segment of `<app_path>` (e.g. `web` for `apps/web`).
-- The PR title names the app: `nightshift/plan: <app_path> — <plan-name> <phase-range>` where `<phase-range>` is e.g. `phase 2`, `phases 2–4`, or `(completes plan)` if every remaining phase landed.
+- The branch name includes the app slug: `night-shift/plan-<app-slug>-<plan-slug>-YYYY-MM-DD` where `<app-slug>` is the last segment of `<app_path>` (e.g. `web` for `apps/web`).
+- The PR title names the app: `night-shift/plan: <app_path> — <plan-name> <phase-range>` where `<phase-range>` is e.g. `phase 2`, `phases 2–4`, or `(completes plan)` if every remaining phase landed.
 
 When no `app_path` is provided (single-app repo), the plans directory defaults to `docs/` and branch / PR titles omit the app slug — the pre-monorepo behaviour.
 
@@ -51,22 +51,22 @@ When no `app_path` is provided (single-app repo), the plans directory defaults t
 
 4b. **If the phases you landed were the last pending ones, delete the plan file in the same PR.** Re-scan the plan after marking step 4: if **zero** pending phases remain, the plan has served its purpose. Use `git rm <plan-file>` so the deletion is part of the PR diff, and suffix the PR title with ` (completes plan)`. The plan's history stays in git — what we lose from the live `docs/` tree is the noise of completed roadmaps, not the historical record.
 
-   **Opt-out** — if the plan file contains the literal string `nightshift: keep` anywhere (front matter, an HTML comment like `<!-- nightshift: keep -->`, or a `Status:` line such as `**Status: Complete (keep as reference)**`), do **not** delete it. The user wants that plan preserved as a live reference. Mark it as `**Status: Implemented (YYYY-MM-DD)**` and leave the file in place; future wrapper pre-filters will record it as `not-applicable` indefinitely without dispatching a subagent.
+   **Opt-out** — if the plan file contains the literal string `night-shift: keep` anywhere (front matter, an HTML comment like `<!-- night-shift: keep -->`, or a `Status:` line such as `**Status: Complete (keep as reference)**`), do **not** delete it. The user wants that plan preserved as a live reference. Mark it as `**Status: Implemented (YYYY-MM-DD)**` and leave the file in place; future wrapper pre-filters will record it as `not-applicable` indefinitely without dispatching a subagent.
 
    **Migration tip for plans that contain non-roadmap material:** if the plan file has design rationale, alternatives-considered, or other reference material the team wants to keep beyond implementation, move that material to an ADR (`docs/adr/NNNN-<slug>.md`) **before** the final unit lands. The plan file then truly only contains roadmap and can be safely deleted.
 
 5. Check for an existing open PR for this plan to avoid duplicates:
    ```
-   gh pr list --search "nightshift/plan in:title" --state open --json title
+   gh pr list --search "night-shift/plan in:title" --state open --json title
    ```
    If **any** open PR already exists for this plan (and app, when scoped) — regardless of which phases it covers — exit silently. Stacking multiple open PRs for one plan creates merge-order ambiguity for the human reviewer; wait for the existing one to merge or close.
 
 6. Create a branch:
    ```
    # scoped:
-   git checkout -b nightshift/plan-<app-slug>-<plan-slug>-YYYY-MM-DD
+   git checkout -b night-shift/plan-<app-slug>-<plan-slug>-YYYY-MM-DD
    # unscoped:
-   git checkout -b nightshift/plan-<plan-slug>-YYYY-MM-DD
+   git checkout -b night-shift/plan-<plan-slug>-YYYY-MM-DD
    ```
    `<plan-slug>` is the plan filename without `-PLAN.md` (or without `.md` for non-standard names).
 
@@ -82,10 +82,10 @@ When no `app_path` is provided (single-app repo), the plans directory defaults t
 On success (drop the `<app_path> — ` prefix from commit + PR title when unscoped). The wrapper has already created the standard labels for this repo — just attach them. End the body with the Night Shift footer:
 ```
 git add -A
-git commit -m "nightshift(plan): <app_path> — <plan-name> <phase-range> — <short title>"
+git commit -m "night-shift(plan): <app_path> — <plan-name> <phase-range> — <short title>"
 git push -u origin HEAD
 
-cat > /tmp/nightshift-pr-body.md <<'EOF'
+cat > /tmp/night-shift-pr-body.md <<'EOF'
 ## Plain summary
 <1-2 sentences in English (PR review is always in English, regardless of the product's user language). What capability is now available to which users — the feature in their words, not the implementation. Skip plan-doc references and file paths here. See bundles/_multi-runner.md → "Body header — Plain summary".>
 
@@ -116,13 +116,13 @@ _Run by Night Shift • plans/build-planned-features_
 EOF
 
 # Normal PR (more phases still pending):
-gh pr create --title "nightshift/plan: <app_path> — <plan-name> <phase-range>" \
-  --label nightshift --label "nightshift:plans" \
-  --body-file /tmp/nightshift-pr-body.md
+gh pr create --title "night-shift/plan: <app_path> — <plan-name> <phase-range>" \
+  --label night-shift --label "night-shift:plans" \
+  --body-file /tmp/night-shift-pr-body.md
 # Completes-the-plan variant:
-# gh pr create --title "nightshift/plan: <app_path> — <plan-name> <phase-range> (completes plan)" \
-#   --label nightshift --label "nightshift:plans" \
-#   --body-file /tmp/nightshift-pr-body.md
+# gh pr create --title "night-shift/plan: <app_path> — <plan-name> <phase-range> (completes plan)" \
+#   --label night-shift --label "night-shift:plans" \
+#   --body-file /tmp/night-shift-pr-body.md
 ```
 
 **Always use `--body-file`, never inline `--body`.** Inline body strings get silently flattened to one-liners with literal `\n` — the entire PR body then renders as one unbroken paragraph on GitHub. See `bundles/_multi-runner.md` → "PR body formatting".
@@ -134,4 +134,4 @@ gh pr create --title "nightshift/plan: <app_path> — <plan-name> <phase-range>"
 - If the supplied `PLAN_FILE` has no pending units, exit silently.
 - If a PR for the same plan (+ app, when scoped) is already open — covering any phase range — exit silently. Do not stack a second open PR for the same plan.
 - Always update the plan file to mark every phase you completed — this is what prevents re-running the same work next night.
-- When the phases you implement include the **last** pending one, also `git rm` the plan file in the same PR — unless the plan opts out via `nightshift: keep`. The completed-plan deletion is part of the unit-completion contract, not a separate cleanup step.
+- When the phases you implement include the **last** pending one, also `git rm` the plan file in the same PR — unless the plan opts out via `night-shift: keep`. The completed-plan deletion is part of the unit-completion contract, not a separate cleanup step.

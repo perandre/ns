@@ -29,11 +29,11 @@ For each discovered target repo, in directory-name order:
    - Check opt-out signals. Record `opted-out` and continue if any of: `.nightshift-skip` exists at the repo root, or `CLAUDE.md` / `AGENTS.md` / `README.md` contains the line `Night Shift: skip`.
    - **Ensure all five Night Shift labels exist on the repo** (idempotent — silent if they already exist). Run this once per repo before dispatching subagents:
      ```
-     gh label create nightshift --color "0e8a16" --description "Automated by Night Shift" 2>/dev/null || true
-     gh label create "nightshift:plans" --color "1d76db" --description "Night Shift plans bundle" 2>/dev/null || true
-     gh label create "nightshift:docs" --color "1d76db" --description "Night Shift docs bundle" 2>/dev/null || true
-     gh label create "nightshift:code-fixes" --color "1d76db" --description "Night Shift code-fixes bundle" 2>/dev/null || true
-     gh label create "nightshift:audits" --color "1d76db" --description "Night Shift audits bundle" 2>/dev/null || true
+     gh label create night-shift --color "0e8a16" --description "Automated by Night Shift" 2>/dev/null || true
+     gh label create "night-shift:plans" --color "1d76db" --description "Night Shift plans bundle" 2>/dev/null || true
+     gh label create "night-shift:docs" --color "1d76db" --description "Night Shift docs bundle" 2>/dev/null || true
+     gh label create "night-shift:code-fixes" --color "1d76db" --description "Night Shift code-fixes bundle" 2>/dev/null || true
+     gh label create "night-shift:audits" --color "1d76db" --description "Night Shift audits bundle" 2>/dev/null || true
      ```
      All five are created together so subagents in any future bundle can rely on them. See `bundles/_multi-runner.md` → "Labels (created at wrapper level, applied at task level)".
    - Parse `## Night Shift Config` in `CLAUDE.md`. If it contains an `apps:` block, build one app-scope per `apps[]` entry (each with its own `app_path` + merged `scoped_config`). Otherwise build a single app-scope with `app_path = —`.
@@ -79,10 +79,10 @@ For each discovered target repo, in directory-name order:
 
    When APP_PATH is not "—":
    - Branch name must include the app slug:
-         nightshift/plan-<app-slug>-<plan-slug>-YYYY-MM-DD
+         night-shift/plan-<app-slug>-<plan-slug>-YYYY-MM-DD
      where <app-slug> is the last segment of APP_PATH (e.g. "web" for "apps/web").
    - PR title must name the app and the phase range:
-         nightshift/plan: <app_path> — <plan-name> <phase-range>
+         night-shift/plan: <app_path> — <plan-name> <phase-range>
      where <phase-range> is e.g. "phase 2", "phases 2–4", or suffix
      "(completes plan)" when this PR lands the last pending phase.
 
@@ -102,7 +102,7 @@ For each discovered target repo, in directory-name order:
    ```
    - YYYY-MM-DD plans  <app_path or —>  <plan-slug>  <ok|silent|failed>  <PR # or —> — <terse note, max 60 chars>
    ```
-   Commit (`docs: append nightshift history`) and push that single change. Do this for every dispatched subagent — including `silent` and `failed` ones.
+   Commit (`docs: append night-shift history`) and push that single change. Do this for every dispatched subagent — including `silent` and `failed` ones.
 5. Move on to the next work-item. **Never stop early** — every plan must get its own dispatch attempt, even if earlier plans failed.
 
 If a subagent dispatch itself fails, record `failed | PR: — | dispatch error: <reason>` and still append a `failed` history row on main.
@@ -135,7 +135,7 @@ Return EXACTLY ONE LINE to me in this format:
     <ok|silent|failed> | PRs: <comma-separated URLs or —> | <terse note, max 60 chars>
 ```
 
-After the work-on-issues subagent returns, **on `main`** in `{REPO_PATH}` append one history row, then commit (`docs: append nightshift history`) and push:
+After the work-on-issues subagent returns, **on `main`** in `{REPO_PATH}` append one history row, then commit (`docs: append night-shift history`) and push:
 ```
 - YYYY-MM-DD plans  —  work-on-issues  <ok|silent|failed>  <terse note, max 80 chars>
 ```

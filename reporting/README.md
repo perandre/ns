@@ -72,7 +72,7 @@ In each repo that calls the Night Shift workflow, add the
 `NIGHTSHIFT_REPORT_URL` secret:
 
 ```
-gh secret set NIGHTSHIFT_REPORT_URL --body "https://your-endpoint.example.com/nightshift"
+gh secret set NIGHTSHIFT_REPORT_URL --body "https://your-endpoint.example.com/night-shift"
 ```
 
 Then pass it in your caller workflow:

@@ -43,15 +43,15 @@ When in doubt, **skip**. A silent night is the correct outcome on most runs. Ope
 This task runs in **pull-request mode** (per `manifest.yml`). Create a feature branch, commit your changes there, push, and open a PR with the standardized title format. Ensure labels exist (idempotent), then attach them. End the PR body with the Night Shift footer.
 
 ```
-git checkout -b nightshift/adr-YYYY-MM-DD
+git checkout -b night-shift/adr-YYYY-MM-DD
 
 git add docs/adr/
-git commit -m "nightshift(adr): document <decision-1>, <decision-2>"
+git commit -m "night-shift(adr): document <decision-1>, <decision-2>"
 git push -u origin HEAD
 
 # Wrapper has already created the standard labels for this repo — just attach them.
 
-cat > /tmp/nightshift-pr-body.md <<'EOF'
+cat > /tmp/night-shift-pr-body.md <<'EOF'
 ## Summary
 - <bullet per ADR added, with one-line rationale>
 
@@ -63,9 +63,9 @@ cat > /tmp/nightshift-pr-body.md <<'EOF'
 _Run by Night Shift • docs/document-decisions_
 EOF
 
-gh pr create --title "nightshift/adr: document <decision-1>, <decision-2>" \
-  --label nightshift --label "nightshift:docs" \
-  --body-file /tmp/nightshift-pr-body.md
+gh pr create --title "night-shift/adr: document <decision-1>, <decision-2>" \
+  --label night-shift --label "night-shift:docs" \
+  --body-file /tmp/night-shift-pr-body.md
 ```
 
 **Always use `--body-file`, never inline `--body`.** See `bundles/_multi-runner.md` → "PR body formatting".

@@ -26,11 +26,11 @@ For each discovered target repo, in directory-name order:
    - Check opt-out signals (`.nightshift-skip`, or `Night Shift: skip` in `CLAUDE.md` / `AGENTS.md` / `README.md`). Record `opted-out` and continue if any are present.
    - **Ensure all five Night Shift labels exist on the repo** (idempotent — silent if they already exist). Run this once per repo before dispatching subagents:
      ```
-     gh label create nightshift --color "0e8a16" --description "Automated by Night Shift" 2>/dev/null || true
-     gh label create "nightshift:plans" --color "1d76db" --description "Night Shift plans bundle" 2>/dev/null || true
-     gh label create "nightshift:docs" --color "1d76db" --description "Night Shift docs bundle" 2>/dev/null || true
-     gh label create "nightshift:code-fixes" --color "1d76db" --description "Night Shift code-fixes bundle" 2>/dev/null || true
-     gh label create "nightshift:audits" --color "1d76db" --description "Night Shift audits bundle" 2>/dev/null || true
+     gh label create night-shift --color "0e8a16" --description "Automated by Night Shift" 2>/dev/null || true
+     gh label create "night-shift:plans" --color "1d76db" --description "Night Shift plans bundle" 2>/dev/null || true
+     gh label create "night-shift:docs" --color "1d76db" --description "Night Shift docs bundle" 2>/dev/null || true
+     gh label create "night-shift:code-fixes" --color "1d76db" --description "Night Shift code-fixes bundle" 2>/dev/null || true
+     gh label create "night-shift:audits" --color "1d76db" --description "Night Shift audits bundle" 2>/dev/null || true
      ```
      All five are created together so subagents in any future bundle can rely on them. See `bundles/_multi-runner.md` → "Labels (created at wrapper level, applied at task level)".
    - Parse `## Night Shift Config` in `CLAUDE.md`. If it contains an `apps:` block, build one work-item per `apps[]` entry (with merged `scoped_config`). Otherwise build a single work-item with `app_path = —`.
@@ -55,9 +55,9 @@ For each discovered target repo, in directory-name order:
    When APP_PATH is not "—":
    - Each task walks only files under APP_PATH. Key pages come from scoped config.
    - Branch names include the app slug:
-         nightshift/<area>-<app-slug>-YYYY-MM-DD
+         night-shift/<area>-<app-slug>-YYYY-MM-DD
    - PR titles name the app:
-         nightshift/<area>: <app_path> — <short description>
+         night-shift/<area>: <app_path> — <short description>
    - Skip the secret scan step in find-security-issues unless RUN_REPO_SECRET_SCAN is true.
 
    CLAUDE.md is optional. Honor `## Night Shift Config` if present, otherwise apply
@@ -76,7 +76,7 @@ For each discovered target repo, in directory-name order:
    ```
    - YYYY-MM-DD audits  <app_path or —>  <ok|silent|failed>  <PR count>; <terse note, max 60 chars>
    ```
-   Commit (`docs: append nightshift history`) and push that single change. Do this for every dispatched subagent — including `silent` and `failed` ones — so every dispatched run leaves a row.
+   Commit (`docs: append night-shift history`) and push that single change. Do this for every dispatched subagent — including `silent` and `failed` ones — so every dispatched run leaves a row.
 5. Move on to the next work-item.
 
 If a subagent dispatch itself fails, record `failed | PRs: — | dispatch error: <reason>` and still append a `failed` history row on main.

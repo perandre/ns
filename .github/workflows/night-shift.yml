@@ -133,7 +133,7 @@ jobs:
           echo "${OUTPUT}"
 
           # Persist output and duration for reporting and Slack steps
-          echo "${OUTPUT}" > /tmp/nightshift-output.txt
+          echo "${OUTPUT}" > /tmp/night-shift-output.txt
           echo "duration=${DURATION}" >> "$GITHUB_OUTPUT"
 
           # Write summary to GitHub Actions UI
@@ -148,8 +148,8 @@ jobs:
           NIGHTSHIFT_REPORT_URL: ${{ secrets.NIGHTSHIFT_REPORT_URL }}
         run: |
           OUTPUT=""
-          if [ -f /tmp/nightshift-output.txt ]; then
-            OUTPUT=$(cat /tmp/nightshift-output.txt)
+          if [ -f /tmp/night-shift-output.txt ]; then
+            OUTPUT=$(cat /tmp/night-shift-output.txt)
           fi
           DURATION="${{ steps.run.outputs.duration }}"
           DURATION="${DURATION:-0}"
@@ -267,8 +267,8 @@ jobs:
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
           OUTPUT=""
-          if [ -f /tmp/nightshift-output.txt ]; then
-            OUTPUT=$(cat /tmp/nightshift-output.txt)
+          if [ -f /tmp/night-shift-output.txt ]; then
+            OUTPUT=$(cat /tmp/night-shift-output.txt)
           fi
 
           # Count PRs and commits from output

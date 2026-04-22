@@ -10,8 +10,8 @@ Read `CLAUDE.md` for **Night Shift Config**: doc/UI language(s), translation fil
 - Only scan UI components under `<app_path>` for hardcoded strings.
 - Only edit translation files under `<app_path>` (or the fallback repo-wide file if that's what the app uses).
 - Use the app-scoped test and build commands from the scoped config.
-- Branch: `nightshift/i18n-<app-slug>-YYYY-MM-DD`.
-- PR title: `nightshift/i18n: <app_path> — localize hardcoded strings`.
+- Branch: `night-shift/i18n-<app-slug>-YYYY-MM-DD`.
+- PR title: `night-shift/i18n: <app_path> — localize hardcoded strings`.
 
 Without an `app_path`, behave as before.
 
@@ -21,7 +21,7 @@ Only open a PR when there are clearly user-visible hardcoded strings that belong
 ## Steps
 1. Check for an existing open night-shift i18n PR for this app (or repo when unscoped):
    ```
-   gh pr list --search "nightshift/i18n in:title" --state open
+   gh pr list --search "night-shift/i18n in:title" --state open
    ```
    If one exists for the same app, exit silently — do not stack PRs.
 2. Detect the project's i18n setup (e.g. `next-intl`, `react-i18next`, `formatjs`, custom). Prefer an i18n setup inside `<app_path>` when scoped. If there is no i18n setup at all, exit silently — that is a config decision, not a night-shift fix.
@@ -33,14 +33,14 @@ Only open a PR when there are clearly user-visible hardcoded strings that belong
 5. Collect all fixes in one branch (include app slug when scoped):
    ```
    # scoped:
-   git checkout -b nightshift/i18n-<app-slug>-YYYY-MM-DD
+   git checkout -b night-shift/i18n-<app-slug>-YYYY-MM-DD
    # unscoped:
-   git checkout -b nightshift/i18n-YYYY-MM-DD
+   git checkout -b night-shift/i18n-YYYY-MM-DD
    ```
 6. Run the scoped **test suite** and the scoped **build command**. Both must pass.
 7. Push and open the PR (prefix title with `<app_path> — ` when scoped). The wrapper has already created the standard labels for this repo — just attach them. **Always use `--body-file`, never inline `--body`.** End the body with the Night Shift footer:
    ```
-   cat > /tmp/nightshift-pr-body.md <<'EOF'
+   cat > /tmp/night-shift-pr-body.md <<'EOF'
    ## Plain summary
    <1-2 sentences in English (PR review is always in English, regardless of the product's user language). Which screens / labels / messages now appear in the user's language instead of English (or whichever fallback was leaking through), and which user group benefits most. Skip framework / key-naming jargon. See bundles/_multi-runner.md → "Body header — Plain summary".>
 
@@ -60,9 +60,9 @@ Only open a PR when there are clearly user-visible hardcoded strings that belong
    _Run by Night Shift • code-fixes/translate-ui_
    EOF
 
-   gh pr create --title "nightshift/i18n: <app_path> — localize hardcoded strings" \
-     --label nightshift --label "nightshift:code-fixes" \
-     --body-file /tmp/nightshift-pr-body.md
+   gh pr create --title "night-shift/i18n: <app_path> — localize hardcoded strings" \
+     --label night-shift --label "night-shift:code-fixes" \
+     --body-file /tmp/night-shift-pr-body.md
    ```
 
    **Do not** modify `docs/NIGHTSHIFT-HISTORY.md` from this branch — the multi-runner wrapper appends the history row on `main` after you return your one-line result.

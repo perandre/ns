@@ -45,20 +45,20 @@ Pick the mode before writing anything. If you notice work that fits the other mo
 This task runs in **pull-request mode** (per `manifest.yml`). Create a feature branch, commit your changes there, push, and open a PR with the standardized title format. Ensure labels exist (idempotent), then attach them. End the PR body with the Night Shift footer.
 
 ```
-git checkout -b nightshift/suggestions-YYYY-MM-DD
+git checkout -b night-shift/suggestions-YYYY-MM-DD
 
 git add docs/SUGGESTIONS.md
 # Mode A commit:
-git commit -m "nightshift(suggestions): add <N> ideas"
+git commit -m "night-shift(suggestions): add <N> ideas"
 # Mode B commit:
-# git commit -m "nightshift(suggestions): mark <N> implemented"
+# git commit -m "night-shift(suggestions): mark <N> implemented"
 
 git push -u origin HEAD
 
 # Wrapper has already created the standard labels for this repo — just attach them.
 
 # Mode A body + PR:
-cat > /tmp/nightshift-pr-body.md <<'EOF'
+cat > /tmp/night-shift-pr-body.md <<'EOF'
 ## Mode
 A — added <N> new suggestions.
 
@@ -69,12 +69,12 @@ A — added <N> new suggestions.
 _Run by Night Shift • docs/suggest-improvements_
 EOF
 
-gh pr create --title "nightshift/suggestions: add <N> ideas" \
-  --label nightshift --label "nightshift:docs" \
-  --body-file /tmp/nightshift-pr-body.md
+gh pr create --title "night-shift/suggestions: add <N> ideas" \
+  --label night-shift --label "night-shift:docs" \
+  --body-file /tmp/night-shift-pr-body.md
 
 # Mode B body + PR:
-# cat > /tmp/nightshift-pr-body.md <<'EOF'
+# cat > /tmp/night-shift-pr-body.md <<'EOF'
 # ## Mode
 # B — status update only, no new suggestions added.
 #
@@ -85,9 +85,9 @@ gh pr create --title "nightshift/suggestions: add <N> ideas" \
 # _Run by Night Shift • docs/suggest-improvements_
 # EOF
 #
-# gh pr create --title "nightshift/suggestions: mark <N> implemented" \
-#   --label nightshift --label "nightshift:docs" \
-#   --body-file /tmp/nightshift-pr-body.md
+# gh pr create --title "night-shift/suggestions: mark <N> implemented" \
+#   --label night-shift --label "night-shift:docs" \
+#   --body-file /tmp/night-shift-pr-body.md
 ```
 
 **Always use `--body-file`, never inline `--body`.** See `bundles/_multi-runner.md` → "PR body formatting".

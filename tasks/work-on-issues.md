@@ -23,13 +23,13 @@ gh issue comment <number> --body "Night Shift reviewed this issue but skipped it
 ### Check for existing PRs
 Check for an existing open PR for this issue to avoid duplicates:
 ```
-gh pr list --search "nightshift/issue in:title #<number>" --state open --json title
+gh pr list --search "night-shift/issue in:title #<number>" --state open --json title
 ```
 If a PR for the same issue is already open, skip silently.
 
 ### Create a branch
 ```
-git checkout -b nightshift/issue-<number>-<short-slug>-YYYY-MM-DD
+git checkout -b night-shift/issue-<number>-<short-slug>-YYYY-MM-DD
 ```
 `<short-slug>` is a 3–5 word kebab-case summary of the issue title.
 
@@ -60,10 +60,10 @@ If tests or build fail:
 On success. The wrapper has already created the standard labels for this repo — just attach them. End the body with the Night Shift footer:
 ```
 git add -A
-git commit -m "nightshift(issue): #<number> — <short description>"
+git commit -m "night-shift(issue): #<number> — <short description>"
 git push -u origin HEAD
 
-cat > /tmp/nightshift-pr-body.md <<'EOF'
+cat > /tmp/night-shift-pr-body.md <<'EOF'
 Closes #<number>
 
 ## Plain summary
@@ -83,9 +83,9 @@ Closes #<number>
 _Run by Night Shift • plans/work-on-issues_
 EOF
 
-gh pr create --title "nightshift/issue: #<number> — <short description>" \
-  --label nightshift --label "nightshift:plans" \
-  --body-file /tmp/nightshift-pr-body.md
+gh pr create --title "night-shift/issue: #<number> — <short description>" \
+  --label night-shift --label "night-shift:plans" \
+  --body-file /tmp/night-shift-pr-body.md
 ```
 
 **Always use `--body-file`, never inline `--body`.** Inline body strings get silently flattened to one-liners with literal `\n` — the entire PR body then renders as one unbroken paragraph on GitHub. See `bundles/_multi-runner.md` → "PR body formatting".

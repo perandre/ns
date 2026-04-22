@@ -8,15 +8,15 @@ Read `CLAUDE.md` for **Night Shift Config**: test command, build command, defaul
 **Scoping.** If the dispatching multi-runner passes an `app_path` (non-empty, not `—`), operate inside that app only:
 - Only walk files under `<app_path>` when hunting for coverage gaps.
 - Use the app-scoped test and build commands from the scoped config.
-- Branch: `nightshift/tests-<app-slug>-YYYY-MM-DD`.
-- PR title: `nightshift/tests: <app_path> — add coverage for <N> units`.
+- Branch: `night-shift/tests-<app-slug>-YYYY-MM-DD`.
+- PR title: `night-shift/tests: <app_path> — add coverage for <N> units`.
 
 Without an `app_path` (single-app repo), behave as before: walk the whole repo, use the top-level test/build commands.
 
 ## Steps
 1. Check for an existing open night-shift tests PR for this app (or repo when unscoped):
    ```
-   gh pr list --search "nightshift/tests in:title" --state open
+   gh pr list --search "night-shift/tests in:title" --state open
    ```
    If one exists for the same app, exit silently — do not stack PRs.
 
@@ -41,13 +41,13 @@ Without an `app_path` (single-app repo), behave as before: walk the whole repo, 
 7. Collect all passing tests in one branch (include app slug when scoped):
    ```
    # scoped:
-   git checkout -b nightshift/tests-<app-slug>-YYYY-MM-DD
+   git checkout -b night-shift/tests-<app-slug>-YYYY-MM-DD
    # unscoped:
-   git checkout -b nightshift/tests-YYYY-MM-DD
+   git checkout -b night-shift/tests-YYYY-MM-DD
    ```
 8. Push and open the PR (prefix title with `<app_path> — ` when scoped). The wrapper has already created the standard labels for this repo — just attach them. **Always use `--body-file`, never inline `--body`.** End the body with the Night Shift footer:
    ```
-   cat > /tmp/nightshift-pr-body.md <<'EOF'
+   cat > /tmp/night-shift-pr-body.md <<'EOF'
    ## Summary
    Found coverage gaps and added tests for <N> units.
 
@@ -64,9 +64,9 @@ Without an `app_path` (single-app repo), behave as before: walk the whole repo, 
    _Run by Night Shift • code-fixes/add-tests_
    EOF
 
-   gh pr create --title "nightshift/tests: <app_path> — add coverage for <N> units" \
-     --label nightshift --label "nightshift:code-fixes" \
-     --body-file /tmp/nightshift-pr-body.md
+   gh pr create --title "night-shift/tests: <app_path> — add coverage for <N> units" \
+     --label night-shift --label "night-shift:code-fixes" \
+     --body-file /tmp/night-shift-pr-body.md
    ```
 
    **Do not** modify `docs/NIGHTSHIFT-HISTORY.md` from this branch — the multi-runner wrapper appends the history row on `main` after you return your one-line result.

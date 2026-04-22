@@ -88,7 +88,7 @@ when one is provided.
 
 - `tasks/build-planned-features.md` — read plans from `<app_path>/<plans
   dir>` instead of `docs/`. Branch name includes the app slug
-  (`nightshift/plan-web-<plan>-phase-N-...`). **Each plan execution gets
+  (`night-shift/plan-web-<plan>-phase-N-...`). **Each plan execution gets
   its own PR** — one PR per plan touched, never bundled. Relax the global
   "one phase per night, ever" cap to "one phase per plan per night": in a
   monorepo, two different plans (in different apps, or even the same app)
@@ -119,7 +119,7 @@ when one is provided.
 - Each task either operates inside `app_path` or is explicitly marked
   repo-scoped.
 - A monorepo run produces PRs whose titles name the app
-  (`nightshift(perf): apps/web — LCP fixes`), so reviewers know which
+  (`night-shift(perf): apps/web — LCP fixes`), so reviewers know which
   team owns the change.
 - Single-app repos see no change in PR titles or behaviour.
 

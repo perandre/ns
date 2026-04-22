@@ -85,8 +85,8 @@ For each work-item, in deterministic order (repo directory name, then app path):
    body=$(gh pr view <url> --json body -q .body)
    case "$body" in
      *'\n'*)
-       printf '%s' "$body" | python3 -c "import sys;sys.stdout.write(sys.stdin.read().replace('\\\\n',chr(10)))" > /tmp/nightshift-body-fix.md
-       gh pr edit <url> --body-file /tmp/nightshift-body-fix.md
+       printf '%s' "$body" | python3 -c "import sys;sys.stdout.write(sys.stdin.read().replace('\\\\n',chr(10)))" > /tmp/night-shift-body-fix.md
+       gh pr edit <url> --body-file /tmp/night-shift-body-fix.md
        ;;
    esac
    ```
@@ -103,7 +103,7 @@ If a subagent dispatch itself throws an unrecoverable error, record `failed | di
 The required pattern is **always**:
 
 ```
-cat > /tmp/nightshift-pr-body.md <<'EOF'
+cat > /tmp/night-shift-pr-body.md <<'EOF'
 ## Summary
 - first change
 - second change
@@ -113,8 +113,8 @@ _Run by Night Shift • <bundle>/<task>_
 EOF
 
 gh pr create --title "..." \
-  --label nightshift --label "nightshift:<bundle>" \
-  --body-file /tmp/nightshift-pr-body.md
+  --label night-shift --label "night-shift:<bundle>" \
+  --body-file /tmp/night-shift-pr-body.md
 ```
 
 The HEREDOC writes to a file; `--body-file` reads the file. There is no shell-string flattening step in between, so newlines survive. The single quotes around `'EOF'` also prevent shell variable expansion / backslash interpretation inside the body — what you write is exactly what lands in the PR.
@@ -125,7 +125,7 @@ The HEREDOC writes to a file; `--body-file` reads the file. There is no shell-st
 - `--body "$(printf ...)"` — printf interprets escapes inconsistently.
 - Any body construction that goes through a shell variable with embedded newlines.
 
-Use `/tmp/nightshift-pr-body.md` as the conventional filename — short, predictable, easy to inspect post-mortem if a PR body looks wrong. The file can be overwritten on each PR creation; cleanup is not required.
+Use `/tmp/night-shift-pr-body.md` as the conventional filename — short, predictable, easy to inspect post-mortem if a PR body looks wrong. The file can be overwritten on each PR creation; cleanup is not required.
 
 Each task file contains the body template inside the HEREDOC block. Follow the template structure exactly.
 
@@ -134,29 +134,29 @@ Each task file contains the body template inside the HEREDOC block. Follow the t
 Every PR opened by Night Shift must follow these conventions so reviewers can filter, attribute, and audit the work consistently across all tasks and bundles.
 
 ### PR title format
-Always `nightshift/<area>: <description>`. Slash + colon. The `<area>` is the task's short slug (`bug`, `a11y`, `tests`, `plan`, `docs`, `changelog`, `digest`, `suggestions`, `adr`, `seo`, `perf`, `security`, `i18n`, `issue`). Never use the parens form `nightshift(<area>):` for PR titles — the parens form is reserved for `git commit -m` messages on direct-to-main work, not for PR titles. When the task is scoped to an app, the title includes `<app_path> — ` after the colon.
+Always `night-shift/<area>: <description>`. Slash + colon. The `<area>` is the task's short slug (`bug`, `a11y`, `tests`, `plan`, `docs`, `changelog`, `digest`, `suggestions`, `adr`, `seo`, `perf`, `security`, `i18n`, `issue`). Never use the parens form `night-shift(<area>):` for PR titles — the parens form is reserved for `git commit -m` messages on direct-to-main work, not for PR titles. When the task is scoped to an app, the title includes `<app_path> — ` after the colon.
 
 ### Labels (created at wrapper level, applied at task level)
 Every `gh pr create` call must add two labels:
-- `nightshift` — every Night Shift PR.
-- `nightshift:<bundle>` — one of `nightshift:plans`, `nightshift:docs`, `nightshift:code-fixes`, `nightshift:audits`.
+- `night-shift` — every Night Shift PR.
+- `night-shift:<bundle>` — one of `night-shift:plans`, `night-shift:docs`, `night-shift:code-fixes`, `night-shift:audits`.
 
 **Label creation is a wrapper precondition, not a per-task step.** Each multi-runner wrapper, before dispatching any subagents for a given repo, runs the following block once per repo (after `cd`-ing in for the dirty / opt-out checks):
 
 ```
-gh label create nightshift --color "0e8a16" --description "Automated by Night Shift" 2>/dev/null || true
-gh label create "nightshift:plans" --color "1d76db" --description "Night Shift plans bundle" 2>/dev/null || true
-gh label create "nightshift:docs" --color "1d76db" --description "Night Shift docs bundle" 2>/dev/null || true
-gh label create "nightshift:code-fixes" --color "1d76db" --description "Night Shift code-fixes bundle" 2>/dev/null || true
-gh label create "nightshift:audits" --color "1d76db" --description "Night Shift audits bundle" 2>/dev/null || true
+gh label create night-shift --color "0e8a16" --description "Automated by Night Shift" 2>/dev/null || true
+gh label create "night-shift:plans" --color "1d76db" --description "Night Shift plans bundle" 2>/dev/null || true
+gh label create "night-shift:docs" --color "1d76db" --description "Night Shift docs bundle" 2>/dev/null || true
+gh label create "night-shift:code-fixes" --color "1d76db" --description "Night Shift code-fixes bundle" 2>/dev/null || true
+gh label create "night-shift:audits" --color "1d76db" --description "Night Shift audits bundle" 2>/dev/null || true
 ```
 
-All five are created together (cheap, idempotent) so a single bundle run never leaves a sibling bundle's label missing — a subtle bug that caused `gh pr create --label nightshift:audits` to fail silently and PRs to land label-less when the audits label hadn't been created yet by an earlier bundle. **Do this once per repo per wrapper run.** Subagents inherit the labels and only need to apply them.
+All five are created together (cheap, idempotent) so a single bundle run never leaves a sibling bundle's label missing — a subtle bug that caused `gh pr create --label night-shift:audits` to fail silently and PRs to land label-less when the audits label hadn't been created yet by an earlier bundle. **Do this once per repo per wrapper run.** Subagents inherit the labels and only need to apply them.
 
 Tasks **only** pass the flags, never call `gh label create` themselves:
 ```
-gh pr create --title "nightshift/<area>: ..." \
-  --label nightshift --label "nightshift:<bundle>" \
+gh pr create --title "night-shift/<area>: ..." \
+  --label night-shift --label "night-shift:<bundle>" \
   --body "..."
 ```
 
@@ -176,7 +176,7 @@ _Run by Night Shift • <bundle>/<task-id>_
 _[Session log](<session-url>)_
 ```
 
-The footer is required; the session line is optional. Together they make every PR self-describing for reviewers and auditable from `gh pr list --label nightshift`.
+The footer is required; the session line is optional. Together they make every PR self-describing for reviewers and auditable from `gh pr list --label night-shift`.
 
 ### Body header — `## Plain summary` (first section of every code PR body)
 

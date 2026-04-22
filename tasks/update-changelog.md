@@ -10,7 +10,7 @@ Read `CLAUDE.md` for the **Night Shift Config** section: doc language, changelog
 - If the app has no changelog but the repo root does (`CHANGELOG.md` or `docs/CHANGELOG.md`), write to the repo-root changelog **and** prefix each entry with the app name so readers know which app changed (`- (web) Added …`).
 - Scope the `git log` to paths under `<app_path>`:
   `git log --since=<last-entry-date> --no-merges --oneline -- <app_path>`
-- Commit message names the app: `nightshift(changelog): <app_path> — update for recent user-facing changes`.
+- Commit message names the app: `night-shift(changelog): <app_path> — update for recent user-facing changes`.
 
 Without an `app_path`, behave as before.
 
@@ -24,11 +24,11 @@ If a week's commits are mostly refactors, dependency bumps, internal Night Shift
 - **Hydration / SSR / rendering fixes phrased "could cause flickering / could give a flash"** — if you can't point to a user-visible symptom that real users were reporting, it's an internal fix.
 - **Bug fixes whose user impact is "you might never have noticed"** — the cron-reminder over-sending bug *is* user-facing because users received excess emails; a race condition that's only theoretical is *not*.
 - **Refactors, renames, dependency bumps, lint fixes, type fixes, test additions, CI changes, build-tooling changes.**
-- **Anything sourced from a `nightshift/docs:`, `nightshift/tests:`, `nightshift/perf:`, `nightshift/seo:`, or `nightshift/i18n:` PR.** These are by definition internal maintenance — see the "Source-PR scrutiny" rule below.
+- **Anything sourced from a `night-shift/docs:`, `night-shift/tests:`, `night-shift/perf:`, `night-shift/seo:`, or `night-shift/i18n:` PR.** These are by definition internal maintenance — see the "Source-PR scrutiny" rule below.
 - **The same fix applied to multiple apps written as separate per-app entries.** One entry, mention both apps inline.
 
 ### Source-PR scrutiny
-For each candidate commit, look up the PR it came from (via `gh pr view <#>` if the commit references one). When the source PR title starts with `nightshift/`, apply **extra** scrutiny — Night Shift opens many small internal PRs (a11y sweeps, perf passes, test additions, doc refreshes) that pass the green-CI bar but rarely produce true user-visible value. **Default to skipping `nightshift/...`-sourced commits unless the change is plainly user-visible** (e.g. a `nightshift/bug:` PR that fixed a bug a user would have noticed, or a `nightshift/plan:` PR that shipped a real feature).
+For each candidate commit, look up the PR it came from (via `gh pr view <#>` if the commit references one). When the source PR title starts with `night-shift/`, apply **extra** scrutiny — Night Shift opens many small internal PRs (a11y sweeps, perf passes, test additions, doc refreshes) that pass the green-CI bar but rarely produce true user-visible value. **Default to skipping `night-shift/...`-sourced commits unless the change is plainly user-visible** (e.g. a `night-shift/bug:` PR that fixed a bug a user would have noticed, or a `night-shift/plan:` PR that shipped a real feature).
 
 ### The "would a user write home about this?" test
 Read each draft entry aloud as if announcing it to a customer. If your honest reaction is "they won't care" or "they won't know what this means without the codebase open" — drop it. Better one excellent line than three forgettable ones.
@@ -49,21 +49,21 @@ This task runs in **pull-request mode** (per `manifest.yml`). Create a feature b
 ```
 # Create the branch (include app slug when scoped):
 # scoped:
-git checkout -b nightshift/changelog-<app-slug>-YYYY-MM-DD
+git checkout -b night-shift/changelog-<app-slug>-YYYY-MM-DD
 # unscoped:
-git checkout -b nightshift/changelog-YYYY-MM-DD
+git checkout -b night-shift/changelog-YYYY-MM-DD
 
 git add -A
 # scoped commit:
-git commit -m "nightshift(changelog): <app_path> — update for recent user-facing changes"
+git commit -m "night-shift(changelog): <app_path> — update for recent user-facing changes"
 # unscoped commit:
-git commit -m "nightshift(changelog): update for recent user-facing changes"
+git commit -m "night-shift(changelog): update for recent user-facing changes"
 
 git push -u origin HEAD
 
 # Wrapper has already created the standard labels for this repo — just attach them.
 
-cat > /tmp/nightshift-pr-body.md <<'EOF'
+cat > /tmp/night-shift-pr-body.md <<'EOF'
 ## Summary
 - <bullet per new entry>
 
@@ -75,13 +75,13 @@ _Run by Night Shift • docs/update-changelog_
 EOF
 
 # scoped PR title:
-gh pr create --title "nightshift/changelog: <app_path> — update for recent user-facing changes" \
-  --label nightshift --label "nightshift:docs" \
-  --body-file /tmp/nightshift-pr-body.md
+gh pr create --title "night-shift/changelog: <app_path> — update for recent user-facing changes" \
+  --label night-shift --label "night-shift:docs" \
+  --body-file /tmp/night-shift-pr-body.md
 # unscoped PR title:
-# gh pr create --title "nightshift/changelog: update for recent user-facing changes" \
-#   --label nightshift --label "nightshift:docs" \
-#   --body-file /tmp/nightshift-pr-body.md
+# gh pr create --title "night-shift/changelog: update for recent user-facing changes" \
+#   --label night-shift --label "night-shift:docs" \
+#   --body-file /tmp/night-shift-pr-body.md
 ```
 
 **Always use `--body-file`, never inline `--body`.** See `bundles/_multi-runner.md` → "PR body formatting".

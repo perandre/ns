@@ -17,11 +17,11 @@ For each discovered target repo, in directory-name order:
    - Check opt-out signals (`.nightshift-skip`, or `Night Shift: skip` in `CLAUDE.md` / `AGENTS.md` / `README.md`). Record `opted-out` and continue if any are present.
    - **Ensure all five Night Shift labels exist on the repo** (idempotent — silent if they already exist). Run this once per repo before dispatching subagents:
      ```
-     gh label create nightshift --color "0e8a16" --description "Automated by Night Shift" 2>/dev/null || true
-     gh label create "nightshift:plans" --color "1d76db" --description "Night Shift plans bundle" 2>/dev/null || true
-     gh label create "nightshift:docs" --color "1d76db" --description "Night Shift docs bundle" 2>/dev/null || true
-     gh label create "nightshift:code-fixes" --color "1d76db" --description "Night Shift code-fixes bundle" 2>/dev/null || true
-     gh label create "nightshift:audits" --color "1d76db" --description "Night Shift audits bundle" 2>/dev/null || true
+     gh label create night-shift --color "0e8a16" --description "Automated by Night Shift" 2>/dev/null || true
+     gh label create "night-shift:plans" --color "1d76db" --description "Night Shift plans bundle" 2>/dev/null || true
+     gh label create "night-shift:docs" --color "1d76db" --description "Night Shift docs bundle" 2>/dev/null || true
+     gh label create "night-shift:code-fixes" --color "1d76db" --description "Night Shift code-fixes bundle" 2>/dev/null || true
+     gh label create "night-shift:audits" --color "1d76db" --description "Night Shift audits bundle" 2>/dev/null || true
      ```
      All five are created together so subagents in any future bundle can rely on them. See `bundles/_multi-runner.md` → "Labels (created at wrapper level, applied at task level)".
    - Capture the absolute repo path. `cd` back to the parent.
@@ -50,7 +50,7 @@ For each discovered target repo, in directory-name order:
    ```
    - YYYY-MM-DD code-fixes  —  <ok|silent|failed>  <terse note, max 80 chars>
    ```
-   Commit (`docs: append nightshift history`) and push that single change. Do this for every dispatched subagent — including `silent` and `failed` ones.
+   Commit (`docs: append night-shift history`) and push that single change. Do this for every dispatched subagent — including `silent` and `failed` ones.
 5. Move on to the next repo.
 
 If a subagent dispatch itself fails, record `failed | dispatch error: <reason>` and still append a `failed` history row on main.

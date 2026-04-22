@@ -61,15 +61,15 @@ _(or "None this week" if no PRs were opened)_
 This task runs in **pull-request mode** (per `manifest.yml`). Create a feature branch, commit your changes there, push, and open a PR with the standardized title format. Ensure labels exist (idempotent), then attach them. End the PR body with the Night Shift footer.
 
 ```
-git checkout -b nightshift/digest-YYYY-MM-DD
+git checkout -b night-shift/digest-YYYY-MM-DD
 
 git add docs/NIGHTSHIFT-DIGEST.md
-git commit -m "nightshift(digest): weekly metrics digest"
+git commit -m "night-shift(digest): weekly metrics digest"
 git push -u origin HEAD
 
 # Wrapper has already created the standard labels for this repo — just attach them.
 
-cat > /tmp/nightshift-pr-body.md <<'EOF'
+cat > /tmp/night-shift-pr-body.md <<'EOF'
 ## Summary
 - Week ending <YYYY-MM-DD>
 - <Total runs>: <ok> ok, <silent> silent, <failed> failed
@@ -82,9 +82,9 @@ See `docs/NIGHTSHIFT-DIGEST.md` for the full digest.
 _Run by Night Shift • docs/weekly-digest_
 EOF
 
-gh pr create --title "nightshift/digest: weekly metrics digest" \
-  --label nightshift --label "nightshift:docs" \
-  --body-file /tmp/nightshift-pr-body.md
+gh pr create --title "night-shift/digest: weekly metrics digest" \
+  --label night-shift --label "night-shift:docs" \
+  --body-file /tmp/night-shift-pr-body.md
 ```
 
 **Always use `--body-file`, never inline `--body`.** See `bundles/_multi-runner.md` → "PR body formatting".

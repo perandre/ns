@@ -69,21 +69,21 @@ This task runs in **pull-request mode** (per `manifest.yml`). Create a feature b
 ```
 # Create the branch (include app slug when scoped):
 # scoped:
-git checkout -b nightshift/docs-<app-slug>-YYYY-MM-DD
+git checkout -b night-shift/docs-<app-slug>-YYYY-MM-DD
 # unscoped:
-git checkout -b nightshift/docs-YYYY-MM-DD
+git checkout -b night-shift/docs-YYYY-MM-DD
 
 git add -A
 # scoped commit:
-git commit -m "nightshift(docs): <app_path> — refresh <doc-filename>"
+git commit -m "night-shift(docs): <app_path> — refresh <doc-filename>"
 # unscoped commit:
-git commit -m "nightshift(docs): refresh <doc-filename>"
+git commit -m "night-shift(docs): refresh <doc-filename>"
 
 git push -u origin HEAD
 
 # Wrapper has already created the standard labels for this repo — just attach them.
 
-cat > /tmp/nightshift-pr-body.md <<'EOF'
+cat > /tmp/night-shift-pr-body.md <<'EOF'
 ## Summary
 - Refreshed <doc-filename> against current source code.
 
@@ -95,13 +95,13 @@ _Run by Night Shift • docs/update-user-guide_
 EOF
 
 # scoped PR title:
-gh pr create --title "nightshift/docs: <app_path> — refresh <doc-filename>" \
-  --label nightshift --label "nightshift:docs" \
-  --body-file /tmp/nightshift-pr-body.md
+gh pr create --title "night-shift/docs: <app_path> — refresh <doc-filename>" \
+  --label night-shift --label "night-shift:docs" \
+  --body-file /tmp/night-shift-pr-body.md
 # unscoped PR title:
-# gh pr create --title "nightshift/docs: refresh <doc-filename>" \
-#   --label nightshift --label "nightshift:docs" \
-#   --body-file /tmp/nightshift-pr-body.md
+# gh pr create --title "night-shift/docs: refresh <doc-filename>" \
+#   --label night-shift --label "night-shift:docs" \
+#   --body-file /tmp/night-shift-pr-body.md
 ```
 
 **Always use `--body-file`, never inline `--body`.** See `bundles/_multi-runner.md` → "PR body formatting".

@@ -9,8 +9,8 @@ Read `CLAUDE.md` for **Night Shift Config**: key pages, test command, build comm
 - Read `key pages` from the scoped config (the `apps[]` entry for this app), not the top-level list.
 - Only audit and modify files under `<app_path>`.
 - Use the app-scoped test and build commands from the scoped config.
-- Branch: `nightshift/a11y-<app-slug>-YYYY-MM-DD`.
-- PR title: `nightshift/a11y: <app_path> — WCAG 2.1 AA sweep`.
+- Branch: `night-shift/a11y-<app-slug>-YYYY-MM-DD`.
+- PR title: `night-shift/a11y: <app_path> — WCAG 2.1 AA sweep`.
 
 Without an `app_path`, behave as before.
 
@@ -20,7 +20,7 @@ Only open a PR for violations that are clearly demonstrable from the code and wh
 ## Steps
 1. Check for an existing open night-shift a11y PR for this app (or repo when unscoped):
    ```
-   gh pr list --search "nightshift/a11y in:title" --state open
+   gh pr list --search "night-shift/a11y in:title" --state open
    ```
    If one exists for the same app, exit silently — do not stack PRs.
 
@@ -70,14 +70,14 @@ Only open a PR for violations that are clearly demonstrable from the code and wh
 6. Collect all fixes in one branch (include app slug when scoped):
    ```
    # scoped:
-   git checkout -b nightshift/a11y-<app-slug>-YYYY-MM-DD
+   git checkout -b night-shift/a11y-<app-slug>-YYYY-MM-DD
    # unscoped:
-   git checkout -b nightshift/a11y-YYYY-MM-DD
+   git checkout -b night-shift/a11y-YYYY-MM-DD
    ```
 7. Run the scoped **test suite** and the scoped **build command**. Both must pass.
 8. Push and open the PR (prefix title with `<app_path> — ` when scoped). The wrapper has already created the standard labels for this repo — just attach them. **Always use `--body-file`, never inline `--body`.** End the body with the Night Shift footer:
    ```
-   cat > /tmp/nightshift-pr-body.md <<'EOF'
+   cat > /tmp/night-shift-pr-body.md <<'EOF'
    ## Plain summary
    <1-2 sentences in English (PR review is always in English, regardless of the product's user language). Who benefits in concrete terms (e.g. "screen-reader users on the login page now hear validation errors immediately instead of being stuck") and which pages improved. Skip ARIA/role/WCAG codes here — they belong in the criteria section below. See bundles/_multi-runner.md → "Body header — Plain summary".>
 
@@ -97,9 +97,9 @@ Only open a PR for violations that are clearly demonstrable from the code and wh
    _Run by Night Shift • code-fixes/improve-accessibility_
    EOF
 
-   gh pr create --title "nightshift/a11y: <app_path> — WCAG 2.1 AA sweep" \
-     --label nightshift --label "nightshift:code-fixes" \
-     --body-file /tmp/nightshift-pr-body.md
+   gh pr create --title "night-shift/a11y: <app_path> — WCAG 2.1 AA sweep" \
+     --label night-shift --label "night-shift:code-fixes" \
+     --body-file /tmp/night-shift-pr-body.md
    ```
 
    **Do not** modify `docs/NIGHTSHIFT-HISTORY.md` from this branch — the multi-runner wrapper appends the history row on `main` after you return your one-line result.
