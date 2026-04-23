@@ -83,9 +83,12 @@ Closes #<number>
 _Run by Night Shift • plans/work-on-issues_
 EOF
 
-gh pr create --title "night-shift/issue: #<number> — <short description>" \
+PR_URL=$(gh pr create --title "night-shift/issue: #<number> — <short description>" \
   --label night-shift --label "night-shift:plans" \
-  --body-file /tmp/night-shift-pr-body.md
+  --body-file /tmp/night-shift-pr-body.md)
+# Post-create ritual (spec: bundles/_multi-runner.md)
+gh pr edit "$PR_URL" --add-label night-shift --add-label "night-shift:plans"
+gh pr merge "$PR_URL" --auto --squash 2>/dev/null || gh pr merge "$PR_URL" --auto || true
 ```
 
 **Always use `--body-file`, never inline `--body`.** Inline body strings get silently flattened to one-liners with literal `\n` — the entire PR body then renders as one unbroken paragraph on GitHub. See `bundles/_multi-runner.md` → "PR body formatting".

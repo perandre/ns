@@ -95,13 +95,18 @@ _Run by Night Shift • docs/update-user-guide_
 EOF
 
 # scoped PR title:
-gh pr create --title "night-shift/docs: <app_path> — refresh <doc-filename>" \
+PR_URL=$(gh pr create --title "night-shift/docs: <app_path> — refresh <doc-filename>" \
   --label night-shift --label "night-shift:docs" \
-  --body-file /tmp/night-shift-pr-body.md
+  --body-file /tmp/night-shift-pr-body.md)
+# Post-create ritual (spec: bundles/_multi-runner.md)
+gh pr edit "$PR_URL" --add-label night-shift --add-label "night-shift:docs"
+gh pr merge "$PR_URL" --auto --squash 2>/dev/null || gh pr merge "$PR_URL" --auto || true
 # unscoped PR title:
-# gh pr create --title "night-shift/docs: refresh <doc-filename>" \
+# PR_URL=$(gh pr create --title "night-shift/docs: refresh <doc-filename>" \
 #   --label night-shift --label "night-shift:docs" \
-#   --body-file /tmp/night-shift-pr-body.md
+#   --body-file /tmp/night-shift-pr-body.md)
+# gh pr edit "$PR_URL" --add-label night-shift --add-label "night-shift:docs"
+# gh pr merge "$PR_URL" --auto --squash 2>/dev/null || gh pr merge "$PR_URL" --auto || true
 ```
 
 **Always use `--body-file`, never inline `--body`.** See `bundles/_multi-runner.md` → "PR body formatting".

@@ -63,9 +63,12 @@ cat > /tmp/night-shift-pr-body.md <<'EOF'
 _Run by Night Shift • docs/document-decisions_
 EOF
 
-gh pr create --title "night-shift/adr: document <decision-1>, <decision-2>" \
+PR_URL=$(gh pr create --title "night-shift/adr: document <decision-1>, <decision-2>" \
   --label night-shift --label "night-shift:docs" \
-  --body-file /tmp/night-shift-pr-body.md
+  --body-file /tmp/night-shift-pr-body.md)
+# Post-create ritual (spec: bundles/_multi-runner.md)
+gh pr edit "$PR_URL" --add-label night-shift --add-label "night-shift:docs"
+gh pr merge "$PR_URL" --auto --squash 2>/dev/null || gh pr merge "$PR_URL" --auto || true
 ```
 
 **Always use `--body-file`, never inline `--body`.** See `bundles/_multi-runner.md` → "PR body formatting".

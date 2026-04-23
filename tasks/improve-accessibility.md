@@ -97,9 +97,12 @@ Only open a PR for violations that are clearly demonstrable from the code and wh
    _Run by Night Shift • code-fixes/improve-accessibility_
    EOF
 
-   gh pr create --title "night-shift/a11y: <app_path> — WCAG 2.1 AA sweep" \
+   PR_URL=$(gh pr create --title "night-shift/a11y: <app_path> — WCAG 2.1 AA sweep" \
      --label night-shift --label "night-shift:code-fixes" \
-     --body-file /tmp/night-shift-pr-body.md
+     --body-file /tmp/night-shift-pr-body.md)
+   # Post-create ritual (spec: bundles/_multi-runner.md)
+   gh pr edit "$PR_URL" --add-label night-shift --add-label "night-shift:code-fixes"
+   gh pr merge "$PR_URL" --auto --squash 2>/dev/null || gh pr merge "$PR_URL" --auto || true
    ```
 
    **Do not** modify `docs/NIGHTSHIFT-HISTORY.md` from this branch — the multi-runner wrapper appends the history row on `main` after you return your one-line result.

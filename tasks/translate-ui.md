@@ -60,9 +60,12 @@ Only open a PR when there are clearly user-visible hardcoded strings that belong
    _Run by Night Shift • code-fixes/translate-ui_
    EOF
 
-   gh pr create --title "night-shift/i18n: <app_path> — localize hardcoded strings" \
+   PR_URL=$(gh pr create --title "night-shift/i18n: <app_path> — localize hardcoded strings" \
      --label night-shift --label "night-shift:code-fixes" \
-     --body-file /tmp/night-shift-pr-body.md
+     --body-file /tmp/night-shift-pr-body.md)
+   # Post-create ritual (spec: bundles/_multi-runner.md)
+   gh pr edit "$PR_URL" --add-label night-shift --add-label "night-shift:code-fixes"
+   gh pr merge "$PR_URL" --auto --squash 2>/dev/null || gh pr merge "$PR_URL" --auto || true
    ```
 
    **Do not** modify `docs/NIGHTSHIFT-HISTORY.md` from this branch — the multi-runner wrapper appends the history row on `main` after you return your one-line result.

@@ -59,9 +59,12 @@ Only open a PR for a bug that is clearly real, clearly the codebase's fault (not
    _Run by Night Shift • audits/find-bugs_
    EOF
 
-   gh pr create --title "night-shift/bug: <app_path> — <short description>" \
+   PR_URL=$(gh pr create --title "night-shift/bug: <app_path> — <short description>" \
      --label night-shift --label "night-shift:audits" \
-     --body-file /tmp/night-shift-pr-body.md
+     --body-file /tmp/night-shift-pr-body.md)
+   # Post-create ritual (spec: bundles/_multi-runner.md)
+   gh pr edit "$PR_URL" --add-label night-shift --add-label "night-shift:audits"
+   gh pr merge "$PR_URL" --auto --squash 2>/dev/null || gh pr merge "$PR_URL" --auto || true
    ```
 
    **Do not** modify `docs/NIGHTSHIFT-HISTORY.md` from this branch — the multi-runner wrapper appends the history row on `main` after you return your one-line result.

@@ -116,13 +116,18 @@ _Run by Night Shift • plans/build-planned-features_
 EOF
 
 # Normal PR (more phases still pending):
-gh pr create --title "night-shift/plan: <app_path> — <plan-name> <phase-range>" \
+PR_URL=$(gh pr create --title "night-shift/plan: <app_path> — <plan-name> <phase-range>" \
   --label night-shift --label "night-shift:plans" \
-  --body-file /tmp/night-shift-pr-body.md
+  --body-file /tmp/night-shift-pr-body.md)
+# Post-create ritual (spec: bundles/_multi-runner.md)
+gh pr edit "$PR_URL" --add-label night-shift --add-label "night-shift:plans"
+gh pr merge "$PR_URL" --auto --squash 2>/dev/null || gh pr merge "$PR_URL" --auto || true
 # Completes-the-plan variant:
-# gh pr create --title "night-shift/plan: <app_path> — <plan-name> <phase-range> (completes plan)" \
+# PR_URL=$(gh pr create --title "night-shift/plan: <app_path> — <plan-name> <phase-range> (completes plan)" \
 #   --label night-shift --label "night-shift:plans" \
-#   --body-file /tmp/night-shift-pr-body.md
+#   --body-file /tmp/night-shift-pr-body.md)
+# gh pr edit "$PR_URL" --add-label night-shift --add-label "night-shift:plans"
+# gh pr merge "$PR_URL" --auto --squash 2>/dev/null || gh pr merge "$PR_URL" --auto || true
 ```
 
 **Always use `--body-file`, never inline `--body`.** Inline body strings get silently flattened to one-liners with literal `\n` — the entire PR body then renders as one unbroken paragraph on GitHub. See `bundles/_multi-runner.md` → "PR body formatting".

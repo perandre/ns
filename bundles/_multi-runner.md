@@ -160,19 +160,41 @@ gh pr create --title "night-shift/<area>: ..." \
   --body "..."
 ```
 
-### Arm auto-merge immediately after `gh pr create` (every task)
+### Post-create ritual (every task, no exceptions)
 
-Every `gh pr create` call must be followed by:
+Every `gh pr create` call must capture the URL and immediately run this block:
 
 ```
-gh pr merge --auto --squash 2>/dev/null || gh pr merge --auto
+PR_URL=$(gh pr create --title "night-shift/<area>: ..." \
+  --label night-shift --label "night-shift:<bundle>" \
+  --body-file /tmp/night-shift-pr-body.md)
+
+# (1) Re-assert labels idempotently. `gh pr create --label X` silently drops X
+# if the label does not exist on the target repo, which is how PRs historically
+# landed label-less. `gh pr edit --add-label` is idempotent and surfaces errors.
+gh pr edit "$PR_URL" --add-label night-shift --add-label "night-shift:<bundle>"
+
+# (2) Verify title format. The PR title MUST match 'night-shift/<area>: '. The
+# parens form `nightshift(<area>):` is reserved for direct-to-main commit
+# messages and must not appear on PR titles.
+TITLE=$(gh pr view "$PR_URL" --json title -q .title)
+if ! echo "$TITLE" | grep -qE '^night-shift/[a-z]+(:| —)'; then
+  echo "ERROR: PR title does not match 'night-shift/<area>: …' convention: $TITLE" >&2
+  echo "Rename the PR via 'gh pr edit \"$PR_URL\" --title ...' before continuing." >&2
+fi
+
+# (3) Arm auto-merge. The fallback handles repos with a merge queue, where
+# GitHub sets the merge method itself and rejects the explicit --squash.
+gh pr merge "$PR_URL" --auto --squash 2>/dev/null || gh pr merge "$PR_URL" --auto || true
 ```
 
-on the same branch. The fallback matters: when the target repo has a **merge queue** configured, GitHub sets the merge method itself and rejects the explicit `--squash`. The second form armours against that. `--auto` arms auto-merge but does **not** bypass human review or required checks — the PR enters the merge queue only once you approve it in the morning and every required check is green. The queue then rebases the PR onto fresh `main`, re-runs required checks on the rebased commit, and lands it.
+Why each step matters:
 
-Why this matters: without auto-merge armed, Night Shift PRs sit on their original tree all day. When sibling PRs merge first, each remaining PR goes stale against `main` (missing modules added by siblings, stale CI aggregators, merge conflicts with fresh code). Arming auto-merge lets the queue handle freshness automatically the moment you approve.
+- **Label re-assertion** fixed the recurring "PR landed with no night-shift label" class of failures. When a target repo's `night-shift:<bundle>` label doesn't exist yet, `gh pr create --label` silently drops the flag. The review-gate workflow then auto-passes the PR because the label-match fails — meaning it can merge with zero human approval. Re-asserting via `gh pr edit` is idempotent and produces a visible error if the label truly can't be applied.
+- **Title check** catches subagents that improvise (`nightshift(docs):`, `nightshift/plan:`, etc.) and warn-logs them without failing the task — a reviewer can fix the title manually before merging.
+- **Arm auto-merge** without this, Night Shift PRs sit on their original tree all day. When sibling PRs merge first, each remaining PR goes stale against `main` (missing modules added by siblings, stale CI aggregators, merge conflicts with fresh code). `--auto` does **not** bypass human review or required checks — the PR enters the merge queue only once a reviewer approves in the morning and every required check is green.
 
-If auto-merge fails (repo has no merge queue, or the CLI rejects the flag), log the error but do not fail the task — the PR is already created and a human can merge it manually.
+If any step fails, log the error but do not fail the task — the PR is already created and a human can remediate. Never abort after a successful `gh pr create`.
 
 ### Body footer (last lines of every PR body)
 Every PR body must end with this footer block, separated from the body by a horizontal rule:

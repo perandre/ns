@@ -76,9 +76,12 @@ Only open a PR for clear, real SEO issues on genuinely public pages. Do not add 
    _Run by Night Shift • audits/improve-seo_
    EOF
 
-   gh pr create --title "night-shift/seo: <app_path> — metadata sweep" \
+   PR_URL=$(gh pr create --title "night-shift/seo: <app_path> — metadata sweep" \
      --label night-shift --label "night-shift:audits" \
-     --body-file /tmp/night-shift-pr-body.md
+     --body-file /tmp/night-shift-pr-body.md)
+   # Post-create ritual (spec: bundles/_multi-runner.md)
+   gh pr edit "$PR_URL" --add-label night-shift --add-label "night-shift:audits"
+   gh pr merge "$PR_URL" --auto --squash 2>/dev/null || gh pr merge "$PR_URL" --auto || true
    ```
 
    **Do not** modify `docs/NIGHTSHIFT-HISTORY.md` from this branch — the multi-runner wrapper appends the history row on `main` after you return your one-line result.
