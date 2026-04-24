@@ -222,6 +222,99 @@ Why each step matters:
 
 If any step fails, log the error but do not fail the task — the PR is already created and a human can remediate. Never abort after a successful `gh pr create`.
 
+### Self-review + one revision (code-touching bundles only)
+
+**Applies to:** every task in the `plans`, `code-fixes`, and `audits` bundles. Docs bundle tasks **skip this step entirely** — their output is already user-readable prose, and a self-review pass mostly produces rewording churn without improving correctness.
+
+**Goal:** catch correctness bugs, dead code, and scope drift in the task's own output before a human reviewer sees the PR in the morning. Same-model self-review isn't a substitute for human review — it's a cheap polish pass that raises the floor on each PR.
+
+**Shape:** exactly **one** review and **at most one** revision commit, on the same branch. No loop, no recursion, no second review of the revision. If the revision breaks tests, revert it and keep the original PR.
+
+This step runs **immediately after the post-create ritual above** (labels applied, title verified, body sanity-fixed, auto-merge armed). Auto-merge is already armed; that's fine — a fresh push to the branch just resets GitHub's check status, and auto-merge won't fire until checks re-pass and a human approves in the morning. Order is: create PR → post-create ritual → self-review → (optional) revision commit → PR body audit note. Do **not** reorder or interleave.
+
+#### Review step
+
+Read the PR's own diff:
+
+```
+gh pr diff "$PR_URL"
+```
+
+Critique the diff as if a colleague had opened it. **Only act on** concrete items from this list:
+
+- **Correctness** — off-by-ones, missing `await`s, inverted conditionals, missing null checks on values that can actually be null, silent swallowing of errors that must bubble up, obviously-wrong comparisons.
+- **Dead code / scope drift** — files touched that are unrelated to the task's stated goal, helpers introduced but not used, leftover `console.log` / `print` / `dbg!` / commented-out blocks, TODOs added as part of this change.
+- **Missing error handling at system boundaries** — external IO, user input, external API calls where the rest of the code assumes success.
+- **Missing test that the task template explicitly required** — e.g. `find-bugs` requires a failing test that demonstrates the bug. If the diff adds a fix with no test, that qualifies.
+
+**Do not act on** (these produce churn without value — leave them for the human reviewer):
+
+- Naming / style nits ("could be named better", "prefer early return")
+- Speculative edge cases that can't be reached from reading the code
+- "Nice to have" refactors or abstractions
+- Documentation prose improvements
+- Anything that would *expand* the PR's scope rather than tighten it
+
+If the review surfaces **zero** actionable items from the "act on" list, the task is done. Do **not** create an empty revision commit. Jump straight to the audit-trail note below ("no actionable issues").
+
+#### Revision step (at most once)
+
+If the review surfaced at least one actionable item:
+
+1. Make the fixes directly on the same branch — **no new branch, no new PR**. Keep the revision minimal; address only what the review flagged. Expanding scope defeats the purpose.
+2. Re-run the scoped **test suite** and the scoped **build command**. Both must pass.
+3. **If both pass:** commit with message `night-shift: self-review revision` and `git push origin <branch>`. Auto-merge re-evaluates automatically once checks re-run.
+4. **If tests or build fail:** revert the revision and keep the original PR:
+   ```
+   git reset --hard HEAD~1
+   git push --force-with-lease origin <branch>
+   ```
+   Use `--force-with-lease` (not `--force`) so the push aborts if anything else has landed on the branch since the revision commit. If the lease check fails, log it and stop — do not retry with plain `--force`.
+
+**Never** attempt a second revision. If the first revision breaks tests, the original PR stands and humans handle it in the morning.
+
+#### Audit-trail note on the PR body
+
+After the review (and optional revision), append a `## Self-review` section to the PR body so human reviewers can see what the pass did. Read the current body, insert the new section **before** the `---` footer, and rewrite via `--body-file`:
+
+```
+gh pr view "$PR_URL" --json body -q .body > /tmp/night-shift-body-current.md
+python3 - <<'PY' > /tmp/night-shift-body-next.md
+import sys, pathlib
+body = pathlib.Path('/tmp/night-shift-body-current.md').read_text()
+note = """## Self-review
+<one of the three notes below>
+
+"""
+# Insert before the first '---' horizontal rule (the footer separator).
+# If no '---' is present (shouldn't happen — the footer is mandatory), append at the end.
+marker = '\n---\n'
+if marker in body:
+    head, sep, tail = body.partition(marker)
+    sys.stdout.write(head.rstrip() + '\n\n' + note + sep.lstrip('\n') + tail)
+else:
+    sys.stdout.write(body.rstrip() + '\n\n' + note)
+PY
+gh pr edit "$PR_URL" --body-file /tmp/night-shift-body-next.md
+```
+
+Pick exactly one note:
+
+- `Self-review found no actionable issues.` — when the review surfaced nothing worth acting on.
+- `Self-review revision applied: <one-line summary of the fixes>.` — when a revision commit landed cleanly.
+- `Self-review surfaced <N> issues but the revision broke tests — reverted. Issues: <terse list>.` — when the revision was reverted.
+
+Keep the note to one short paragraph. The human reviewer reads the diff itself for details.
+
+#### Never (self-review rules)
+
+- **Never loop.** One review, at most one revision. No re-reviewing the revision.
+- **Never create a second PR or branch.** The revision amends the same branch; the same PR is the only PR.
+- **Never modify `docs/NIGHTSHIFT-HISTORY.md`.** The wrapper-only rule applies to self-review too.
+- **Never fail the task because self-review flagged issues.** The original PR is already created and armed; self-review can only improve it or leave it untouched.
+- **Never use plain `git push --force`.** The revert path uses `--force-with-lease` exclusively.
+- **Never run self-review in the `docs` bundle.** Prose churn is not the goal.
+
 ### Body footer (last lines of every PR body)
 Every PR body must end with this footer block, separated from the body by a horizontal rule:
 

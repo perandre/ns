@@ -29,3 +29,7 @@ For each task in order:
 ## Mode
 
 Per the manifest, this bundle is **pull-request** mode. Each task creates a feature branch and opens a PR for review.
+
+## Self-review
+
+After each task's post-create ritual finishes, run the **Self-review + one revision** step from `_multi-runner.md` before returning. One review, at most one revision commit, same branch. If the revision breaks tests, revert with `--force-with-lease` and keep the original PR. Because this bundle is `stop_on_failure: true`, the revert path is especially important — a broken revision must not take down the bundle's green baseline.
