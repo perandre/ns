@@ -93,6 +93,21 @@ For each discovered target repo, in directory-name order:
 
 If a subagent dispatch itself fails, record `failed | docs: — | code-fixes: — | dispatch error: <reason>` in the summary.
 
+After all work-items for this repo have completed, run the **PR body sweep** in the repo as a wrapper-level safety net for subagents that skipped their per-task post-create ritual. Idempotent — only modifies bodies that contain literal `\n` sequences:
+
+```bash
+( cd "$REPO_PATH" && \
+  for pr in $(gh pr list --label night-shift --state open --json number --jq '.[].number'); do
+    body=$(gh pr view "$pr" --json body -q .body)
+    case "$body" in
+      *'\n'*)
+        printf '%s' "$body" | python3 -c "import sys;sys.stdout.write(sys.stdin.read().replace(chr(92)+chr(110),chr(10)))" > /tmp/night-shift-body-fix.md
+        gh pr edit "$pr" --body-file /tmp/night-shift-body-fix.md
+        ;;
+    esac
+  done )
+```
+
 ## Final report
 Print this summary table and stop. The summary table is the primary artifact — it appears in the routines dashboard. The per-repo PR list (`gh pr list --label night-shift`) is the persisted audit trail.
 

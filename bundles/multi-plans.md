@@ -98,6 +98,21 @@ For each discovered target repo, in directory-name order:
 
 If a subagent dispatch itself fails, record `failed | PR: — | dispatch error: <reason>` in the summary.
 
+After all work-items for this repo (every plan + the optional `work-on-issues` dispatch below) have completed, run the **PR body sweep** before moving to the next repo. This is a safety net — the per-task post-create ritual already fixes flattened bodies, but if a subagent skipped the ritual the sweep repairs it before the run ends. Idempotent; only modifies bodies that contain literal `\n` sequences:
+
+```bash
+( cd "$REPO_PATH" && \
+  for pr in $(gh pr list --label night-shift --state open --json number --jq '.[].number'); do
+    body=$(gh pr view "$pr" --json body -q .body)
+    case "$body" in
+      *'\n'*)
+        printf '%s' "$body" | python3 -c "import sys;sys.stdout.write(sys.stdin.read().replace(chr(92)+chr(110),chr(10)))" > /tmp/night-shift-body-fix.md
+        gh pr edit "$pr" --body-file /tmp/night-shift-body-fix.md
+        ;;
+    esac
+  done )
+```
+
 Pre-filtered plans (skipped before dispatch — fully implemented, deferred, blocked, etc.) appear in the summary table as `Status: not-applicable` rows; no subagent is dispatched.
 
 ## work-on-issues dispatch (scope: repo, once per repo)

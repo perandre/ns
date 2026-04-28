@@ -79,20 +79,34 @@ For each work-item, in deterministic order (repo directory name, then app path):
    - Instructs it to perform all of the inner bundle's work **inside `app_path`** for tasks marked `scope: app` in `manifest.yml`, and **repo-wide** for tasks marked `scope: repo`.
    - Asks it to return **one single line** to the wrapper, format: `<status> | PR: <url or —> | <terse note>` where status ∈ {`ok`, `silent`, `failed`}.
 3. Capture only that one-line result. Do **not** read or echo the subagent's intermediate work.
-4. **PR body sanity-fix.** If the one-line result contains `PR: https://...`, extract the URL and run:
-   ```bash
-   body=$(gh pr view <url> --json body -q .body)
-   case "$body" in
-     *'\n'*)
-       printf '%s' "$body" | python3 -c "import sys;sys.stdout.write(sys.stdin.read().replace('\\\\n',chr(10)))" > /tmp/night-shift-body-fix.md
-       gh pr edit <url> --body-file /tmp/night-shift-body-fix.md
-       ;;
-   esac
-   ```
-   This catches the case where a subagent ignored the `--body-file` rule and flattened the body to a single line with literal `\n`. The fix is idempotent (re-running on an already-clean body is a no-op) and cheap. See **PR body formatting** below for why this defense exists.
-5. Move on to the next work-item.
+4. Move on to the next work-item.
+
+After all work-items for a given repo have been dispatched, run the **per-repo PR body sweep** before moving to the next repo. See "PR body sweep" below.
 
 If a subagent dispatch itself throws an unrecoverable error, record `failed | dispatch error: <reason>` and continue. Never abort the multi-repo run.
+
+## PR body sweep (wrapper-level safety net)
+
+After all work-items for a repo have been dispatched and their one-line results captured, the wrapper runs a **PR body sweep** in that repo to repair any subagent that skipped its per-task post-create ritual. The sweep is idempotent — it only modifies bodies that contain literal `\n` sequences.
+
+```bash
+( cd "$REPO_PATH" && \
+  for pr in $(gh pr list --label night-shift --state open --json number --jq '.[].number'); do
+    body=$(gh pr view "$pr" --json body -q .body)
+    case "$body" in
+      *'\n'*)
+        printf '%s' "$body" | python3 -c "import sys;sys.stdout.write(sys.stdin.read().replace(chr(92)+chr(110),chr(10)))" > /tmp/night-shift-body-fix.md
+        gh pr edit "$pr" --body-file /tmp/night-shift-body-fix.md
+        ;;
+    esac
+  done )
+```
+
+Why this exists: the per-task post-create ritual already includes the same fix, but a subagent reading a dense task file sometimes runs `gh pr create` and then returns without continuing through the ritual. The wrapper-level sweep catches that case before the run ends, so a flattened body never survives the night.
+
+Why label-based, not URL-extraction: result line formats vary by wrapper (`PR:` vs `PRs:` vs combined-status). Sweeping every open `night-shift`-labelled PR in the repo is robust to result-line drift and also opportunistically repairs older PRs that may still be open from earlier runs.
+
+Each `multi-*.md` wrapper inlines this exact block in its per-repo loop. Do **not** delete it from a wrapper without also deleting it from the others — the consistency is the whole point.
 
 ## Scout open sibling PRs before editing
 
