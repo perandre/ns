@@ -84,11 +84,9 @@ To turn it on:
 
 1. **Connect Atlassian Rovo on your Claude account.** Open https://claude.ai/customize/connectors, find Atlassian Rovo in the directory, click **Connect**, complete the Atlassian OAuth prompt. Verify with `claude mcp list` — you should see `claude.ai Atlassian Rovo: ✓ Connected`.
 
-2. **Attach Rovo to the build routine.** Account-level connectors don't auto-propagate into existing routines. Open https://claude.ai/code/routines, edit the `night-shift-build` routine, and toggle **Atlassian Rovo** on under its connectors. Save.
+2. **Attach Rovo to the build routine.** Account-level connectors don't auto-propagate into existing routines. Open https://claude.ai/code/routines, edit the `night-shift-build` routine, and toggle **Atlassian Rovo** on under its connectors. Save. (The `/night-shift` skill does this automatically once any of your routines has Rovo attached at least once — read its setup runbook for the bootstrap detail.)
 
-3. **Set tool permissions to "Always allow".** Routines run autonomously — there's nobody to approve "Needs approval" tool calls at 3am. In the connector's permissions panel, flip **Interactive** and **Read-only** groups to "Always allow". The task uses `Search with JQL`, `Get issue`, `Get transitions`, `Transition issue`, and the comment-adding tool from those two groups.
-
-4. **Per-repo opt-in.** In each repo's `CLAUDE.md` under `## Night Shift Config`, add the Jira project key. Optionally override the label (defaults to `night-shift`):
+3. **Per-repo opt-in.** In each repo's `CLAUDE.md` under `## Night Shift Config`, add the Jira project key. Optionally override the label (defaults to `night-shift`):
 
    ```
    ## Night Shift Config
@@ -96,7 +94,9 @@ To turn it on:
    - Jira label: night-shift
    ```
 
-5. **Label issues** with `night-shift` in Jira. The next plans run picks up the three oldest open issues, opens one GitHub PR per issue, comments back on the Jira issue with the PR link, and (best-effort) transitions each issue to **In Progress**.
+4. **Label issues** with `night-shift` in Jira. The next plans run picks up the three oldest open issues, opens one GitHub PR per issue, comments back on the Jira issue with the PR link, and (best-effort) transitions each issue to **In Progress**.
+
+The connector's per-tool "Needs approval" UI default does **not** block autonomous routines (verified end-to-end on 2026-04-28). You don't need to flip any tool permissions — routines auto-allow MCP tool calls because there's no human to gate them. If a future Anthropic change starts gating autonomous tool calls, flip Interactive + Read-only to "Always allow" at https://claude.ai/customize/connectors → Atlassian Rovo as the workaround.
 
 The task self-skips silently when the project key is missing or the Rovo connector isn't attached to the routine, so partial setup is safe — you can opt a repo in via the picker first and attach Rovo to the routine later without seeing failure noise.
 
