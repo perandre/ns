@@ -21,6 +21,16 @@ List sibling directories at the top of your working tree. For each candidate, co
 
 `build-planned-features` is `scope: app` in `manifest.yml`, so a repo with an `apps:` block fans out to one work-item per app. **On top of that, plans fan out further: one subagent per plan file.** Every pending plan gets its own agent and its own PR — no plan is ever skipped because another plan ran first.
 
+**Per-repo execution order — dispatch the small caps first.** Within each repo, the order is fixed and load-bearing:
+
+1. **Per-repo prelude** (Step 1 below — dirty/opt-out/labels/CLAUDE.md parse).
+2. **`work-on-issues` dispatch** if allowlisted (see "work-on-issues dispatch" section). Hard cap: 3 issues / one subagent.
+3. **`work-on-jira-issues` dispatch** if allowlisted (see "work-on-jira-issues dispatch" section). Hard cap: 3 issues / one subagent.
+4. **Plan-file fan-out** (Step 2 below — one subagent per surviving plan file; can be 10+ subagents).
+5. **PR body sweep** (after every dispatch above completes for this repo).
+
+This order matters: the plan fan-out can dispatch 10+ subagents and burn most of the wrapper's budget. If issues + jira ran *after* plans (the historical order), a budget-exhausted wrapper would silently never reach them — causing the symptom of "tagged issues sitting open for nights with no PR and no skip-comment." Issues and jira are bounded to ≤3 issues each, so running them first costs a small, predictable amount of context and guarantees they fire.
+
 For each discovered target repo, in directory-name order:
 
 1. From the main wrapper, briefly `cd` into the repo to:
@@ -94,7 +104,7 @@ For each discovered target repo, in directory-name order:
 
 If a subagent dispatch itself fails, record `failed | PR: — | dispatch error: <reason>` in the summary.
 
-After all work-items for this repo (every plan + the optional `work-on-issues` dispatch below) have completed, run the **PR body sweep** before moving to the next repo. This is a safety net — the per-task post-create ritual already fixes flattened bodies, but if a subagent skipped the ritual the sweep repairs it before the run ends. Idempotent; only modifies bodies that contain literal `\n` sequences:
+After all work-items for this repo (the `work-on-issues` and `work-on-jira-issues` dispatches that ran before the plan fan-out, plus every plan-file subagent) have completed, run the **PR body sweep** before moving to the next repo. This is a safety net — the per-task post-create ritual already fixes flattened bodies, but if a subagent skipped the ritual the sweep repairs it before the run ends. Idempotent; only modifies bodies that contain literal `\n` sequences:
 
 ```bash
 ( cd "$REPO_PATH" && \
@@ -113,7 +123,7 @@ Pre-filtered plans (skipped before dispatch — fully implemented, deferred, blo
 
 ## work-on-issues dispatch (scope: repo, once per repo)
 
-After all plan-file work-items for a repo are dispatched, check if `work-on-issues` is in the repo's allowlist. If so, dispatch **one additional `Task` subagent per repo** (not per app — `work-on-issues` is `scope: repo`):
+**Dispatched BEFORE the plan-file fan-out** for this repo (see "Per-repo execution order" above). After Step 1's prelude completes, check if `work-on-issues` is in the repo's allowlist. If so, dispatch **one `Task` subagent per repo** (not per app — `work-on-issues` is `scope: repo`):
 
 ```
 Your working directory is {REPO_PATH}. cd into it now.
@@ -134,7 +144,7 @@ Record the result in the summary as a row with `App = —`, `Plan = work-on-issu
 
 ## work-on-jira-issues dispatch (scope: repo, once per repo)
 
-After the `work-on-issues` dispatch (or skipping it when not allowlisted), check if `work-on-jira-issues` is in the repo's allowlist. If so, dispatch **one additional `Task` subagent per repo**:
+**Dispatched BEFORE the plan-file fan-out** for this repo, immediately after the `work-on-issues` dispatch (or after skipping it when not allowlisted). Check if `work-on-jira-issues` is in the repo's allowlist. If so, dispatch **one `Task` subagent per repo**:
 
 ```
 Your working directory is {REPO_PATH}. cd into it now.
