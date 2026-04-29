@@ -12,7 +12,28 @@ Read `CLAUDE.md` for **Night Shift Config**: test command, build command, defaul
    ```
    If no issues are found, exit silently — this is expected. Not every repo will have tagged issues on any given night.
 
+   **Print a discovery summary line** before doing any per-issue work, so the routines dashboard shows what was found vs. what was acted on. Format (one line, comma-separated, oldest first):
+   ```
+   Discovered tagged issues: #<n>, #<n>, ... (N total). Will consider oldest 3.
+   ```
+   If `N == 0`, print `Discovered tagged issues: none.` and exit silently. This mirrors the plans wrapper's `Discovered plans: ... (N total)` convention and is the single best signal that discovery itself is working.
+
 2. Process up to **3 issues** per run (oldest first). For each issue:
+
+### Skip if recently triaged
+**Before** running scope-evaluation or implementation, check if Night Shift has already commented on this issue in the last 7 days. If so, exit silently for this issue — re-posting the same skip-comment every night is noise, and a human who wants to override the skip can remove the comment or close+reopen the issue.
+
+```bash
+SEVEN_DAYS_AGO=$(date -u -v-7d +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ)
+RECENT_NS_COMMENTS=$(gh issue view <number> --json comments --jq \
+  "[.comments[] | select(.body | startswith(\"Night Shift\")) | select(.createdAt > \"$SEVEN_DAYS_AGO\")] | length")
+if [ "${RECENT_NS_COMMENTS:-0}" -gt 0 ]; then
+  # Already triaged within the last 7 days — silent skip.
+  continue
+fi
+```
+
+If a Night Shift PR for this issue is already open (the next check covers that), this guard is moot — but it also catches issues that were skipped as too-complex or as failed-verification on a previous night, preventing duplicate skip-comments.
 
 ### Evaluate complexity
 Read the issue body to understand what's needed. **Skip if too complex:** if the issue appears to require changes across more than ~5 files or involves major architectural changes, comment on the issue explaining why it was skipped and move to the next issue:
