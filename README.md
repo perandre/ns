@@ -49,6 +49,7 @@ During setup, `/night-shift` runs a **per-repo task picker** — for each repo y
 - **Fixed accessibility issues** — WCAG AA violations on key pages
 - **Translated UI strings** — moves hardcoded text into your i18n system
 - **Audit PRs** — security, bug, SEO, and performance issues
+- **Triage comments on red CI** — every failed or cancelled check on a Night Shift PR gets an explanatory comment by morning, with cancellations and clearly-unrelated flakes already re-run
 
 Every Night Shift run leaves a labelled PR per task (`night-shift`), so `gh pr list --label night-shift` is the audit trail — no per-repo log file is written. The bundle is recoverable from the PR title prefix (`night-shift/plan:`, `night-shift/bug:`, `night-shift/a11y:`, etc.).
 
@@ -60,6 +61,7 @@ Every Night Shift run leaves a labelled PR per task (`night-shift`), so `gh pr l
 | **docs** | Updates changelog, user guide, decision records, suggestions | One PR per task |
 | **code-fixes** | Adds tests, fixes accessibility, completes translations | One PR per task |
 | **audits** | Finds security / bug / SEO / performance issues | One PR per area |
+| **triage-ci** | Comments on red checks on Night Shift PRs, re-runs cancellations + clearly-unrelated flakes | Comments only, no new PRs |
 
 `manifest.yml` is the single source of truth for what tasks exist, what they do, what bundle they belong to, and what order they run in. Edit one file to add, rename, reorder, or move tasks.
 
