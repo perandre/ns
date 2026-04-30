@@ -122,9 +122,43 @@ gh pr merge "$PR_URL" --auto --squash 2>/dev/null || gh pr merge "$PR_URL" --aut
 
 **Self-review.** After the post-create ritual above, run the **Self-review + one revision** step from `_multi-runner.md` before continuing. One review, at most one revision commit, same branch; if the revision breaks tests, revert with `git push --force-with-lease` and keep the original PR.
 
+### Verify PR identity before commenting back to Jira
+
+**Critical.** Before posting any comment on the Jira issue or transitioning it, prove that `$PR_URL` is the PR this run actually created — not a sibling Night Shift PR opened seconds earlier by a different subagent (build-planned-features, find-bugs, etc.). Without this guard, a failed or skipped Jira run can silently attribute an unrelated PR to the issue, mislead the assignee, and incorrectly transition the issue to In Progress.
+
+Two invariants. Both must hold; if either fails, **skip the comment and the transition entirely** and post the failure-comment template from the "If tests or build fail" section above instead, citing `pr-identity-check failed` as the reason.
+
+```bash
+# Invariant 1 — PR_URL must come from THIS run's `gh pr create`, not from any
+# `gh pr list` / `--search` / cached value. If it is empty, do NOT fall back
+# to listing recent night-shift PRs and picking one — that is exactly the
+# failure mode this guard exists to prevent.
+if [ -z "$PR_URL" ]; then
+  echo "pr-identity-check failed: PR_URL is empty (gh pr create did not run or returned nothing)" >&2
+  # Fall through to the failure-comment + skip transition path.
+fi
+
+# Invariant 2 — the PR title must contain the Jira issue key. The standard
+# title format is `night-shift/jira: <ISSUE_KEY> — <description>`, so a
+# substring match on <ISSUE_KEY> is sufficient and resistant to minor title
+# edits a human might make before the comment lands.
+if [ -n "$PR_URL" ]; then
+  PR_TITLE=$(gh pr view "$PR_URL" --json title -q .title)
+  case "$PR_TITLE" in
+    *"<ISSUE_KEY>"*) : ;;  # ok
+    *)
+      echo "pr-identity-check failed: PR title '$PR_TITLE' does not contain $ISSUE_KEY" >&2
+      PR_URL=""  # force the comment + transition steps to take the failure path
+      ;;
+  esac
+fi
+```
+
+If either check fails, do not call the Rovo comment tool with the PR-link template, do not call **Transition issue**, and do not return `ok` for this issue. Use the failure-comment template (`Night Shift attempted this issue but the implementation failed verification…`) and continue to the next issue.
+
 ### Comment on the Jira issue
 
-Call the Rovo comment tool to post the PR link back on the Jira issue. Body text:
+**Only run this section if both invariants above passed.** Call the Rovo comment tool to post the PR link back on the Jira issue. Body text:
 
 > `Night Shift opened a PR for this: <PR_URL>`
 
@@ -132,7 +166,7 @@ If the connector exposes an explicit "Add comment" tool, use it. Otherwise use "
 
 ### Transition the Jira issue to In Progress (best-effort)
 
-After the comment lands, call **Get transitions** for the issue, find the first transition whose target status sits in Jira's `indeterminate` (In Progress) status category, and call **Transition issue** with that transition id. Some workflows already start issues in that category, others have non-standard transitions. Swallow all errors — the PR is already open, the comment is already posted, the transition is purely cosmetic.
+**Only run this section if both invariants above passed and the comment landed.** After the comment lands, call **Get transitions** for the issue, find the first transition whose target status sits in Jira's `indeterminate` (In Progress) status category, and call **Transition issue** with that transition id. Some workflows already start issues in that category, others have non-standard transitions. Swallow all errors — the PR is already open, the comment is already posted, the transition is purely cosmetic.
 
 ### Clean up between issues
 
