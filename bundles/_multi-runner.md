@@ -85,9 +85,26 @@ After all work-items for a given repo have been dispatched, run the **per-repo P
 
 If a subagent dispatch itself throws an unrecoverable error, record `failed | dispatch error: <reason>` and continue. Never abort the multi-repo run.
 
+## Label sweep (wrapper-level safety net) — run BEFORE the body sweep
+
+After all work-items for a repo have been dispatched and their one-line results captured, the wrapper first runs a **label sweep** so the body sweep below (which finds PRs by label) sees every Night Shift PR. Subagents sometimes drop `--label night-shift` on `gh pr create` or skip the post-create `--add-label` step; this sweep adds the missing label by matching on the Night Shift PR title prefix instead. Idempotent — only edits PRs that don't already carry the label.
+
+```bash
+( cd "$REPO_PATH" && \
+  gh pr list --state open --json number,title,labels --jq '
+    .[] | select(.title | startswith("night-shift/"))
+        | select((.labels | map(.name)) | index("night-shift") | not)
+        | .number' \
+    | xargs -I{} -r gh pr edit {} --add-label night-shift )
+```
+
+Why title-prefix, not label: by definition the only way a PR can be missing the label is if the subagent failed to apply it — so a label-based filter would miss exactly the cases this sweep exists to repair. The `night-shift/` title prefix is the contract every task already enforces (`night-shift/plan:`, `night-shift/bug:`, `night-shift/issue:`, etc.), so it's a reliable secondary key.
+
+Each `multi-*.md` wrapper inlines this exact block in its per-repo loop, **immediately before** the body sweep below.
+
 ## PR body sweep (wrapper-level safety net)
 
-After all work-items for a repo have been dispatched and their one-line results captured, the wrapper runs a **PR body sweep** in that repo to repair any subagent that skipped its per-task post-create ritual. The sweep is idempotent — it only modifies bodies that contain literal `\n` sequences.
+After the label sweep above, the wrapper runs a **PR body sweep** in that repo to repair any subagent that skipped its per-task post-create ritual. The sweep is idempotent — it only modifies bodies that contain literal `\n` sequences.
 
 ```bash
 ( cd "$REPO_PATH" && \

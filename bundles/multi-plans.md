@@ -104,7 +104,20 @@ For each discovered target repo, in directory-name order:
 
 If a subagent dispatch itself fails, record `failed | PR: — | dispatch error: <reason>` in the summary.
 
-After all work-items for this repo (the `work-on-issues` and `work-on-jira-issues` dispatches that ran before the plan fan-out, plus every plan-file subagent) have completed, run the **PR body sweep** before moving to the next repo. This is a safety net — the per-task post-create ritual already fixes flattened bodies, but if a subagent skipped the ritual the sweep repairs it before the run ends. Idempotent; only modifies bodies that contain literal `\n` sequences:
+After all work-items for this repo (the `work-on-issues` and `work-on-jira-issues` dispatches that ran before the plan fan-out, plus every plan-file subagent) have completed, run the **label sweep** then the **PR body sweep** before moving to the next repo. The body sweep finds PRs by label, so the label sweep must run first — otherwise PRs whose subagent dropped `--label night-shift` are invisible to the body sweep. Both are idempotent.
+
+**Label sweep** — adds `night-shift` to any open PR whose title starts with `night-shift/` but is missing the label:
+
+```bash
+( cd "$REPO_PATH" && \
+  gh pr list --state open --json number,title,labels --jq '
+    .[] | select(.title | startswith("night-shift/"))
+        | select((.labels | map(.name)) | index("night-shift") | not)
+        | .number' \
+    | xargs -I{} -r gh pr edit {} --add-label night-shift )
+```
+
+**PR body sweep** — repairs bodies that contain literal `\n` sequences (subagent skipped the post-create body fix):
 
 ```bash
 ( cd "$REPO_PATH" && \
